@@ -3,7 +3,7 @@
 The cronodump utility can parse most of the databases created by the [CronosPro](https://www.cronos.ru/) database software
 and dump it to several output formats.
 
-The software is popular among Russian public offices, companies and police agenies.
+The software is popular among Russian public offices, companies and police agencies.
 
 # License
 
