@@ -290,6 +290,7 @@ def kodencode(o, data):
     global INV
     return bytes(INV[(b + i + o) % 256] for i, b in enumerate(data))
 
+
 def incdata(data, s):
     """
     add 's' to each byte.

@@ -3,16 +3,24 @@ import os.path
 from crodump.Database import Database
 from crodump.hexdump import asasc
 
-class Cls: pass
+
+class Cls:
+    pass
+
 
 def main():
     import sys
-    dbpath = sys.argv[1] if len(sys.argv)>1 else os.path.join(os.getenv("HOME"), "prj/cronos")
+
+    dbpath = (
+        sys.argv[1]
+        if len(sys.argv) > 1
+        else os.path.join(os.getenv("HOME"), "prj/cronos")
+    )
     args = Cls()
     args.verbose = False
 
     for path, _, files in os.walk(dbpath):
-        if any(_ for _ in files if _.lower()=="crostru.dat"):
+        if any(_ for _ in files if _.lower() == "crostru.dat"):
             print(path)
 
             db = Database(path)
@@ -27,9 +35,9 @@ def main():
                     for field, fielddef in zip(rec, tab.fields[1:]):
                         print(">> %s -- %s" % (fielddef, asasc(field)))
                     i += 1
-                    if i>100: break
+                    if i > 100:
+                        break
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
-
