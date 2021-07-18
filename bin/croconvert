@@ -1,0 +1,4 @@
+#!/bin/sh
+
+BINPATH=`dirname $0`
+python "$BINPATH/../crodump/croconvert.py" $@

@@ -1,7 +1,7 @@
 import os
 import os.path
-from crodump.Database import Database
-from crodump.hexdump import asasc
+from Database import Database
+from hexdump import asasc
 
 
 class Cls:

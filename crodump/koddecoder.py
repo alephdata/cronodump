@@ -1,4 +1,4 @@
-from crodump.hexdump import hexdump, toout
+from hexdump import hexdump, toout
 
 """
 Decode CroStru KOD encoding.

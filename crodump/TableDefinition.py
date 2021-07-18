@@ -1,6 +1,6 @@
 import struct
-from crodump.hexdump import hexdump, asasc, tohex, unhex, strescape, toout
-from crodump.readers import ByteReader
+from hexdump import hexdump, asasc, tohex, unhex, strescape, toout
+from readers import ByteReader
 
 
 class FieldDefinition:

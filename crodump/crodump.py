@@ -1,10 +1,10 @@
 import io
 import struct
 import re
-from crodump.koddecoder import decode_kod
-from crodump.hexdump import hexdump, asasc, tohex, unhex, strescape, toout
-from crodump.readers import ByteReader
-from crodump.Database import Database
+from koddecoder import decode_kod
+from hexdump import hexdump, asasc, tohex, unhex, strescape, toout
+from readers import ByteReader
+from Database import Database
 from collections import defaultdict
 
 """

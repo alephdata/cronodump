@@ -1,10 +1,10 @@
 import os.path
 import re
 from binascii import b2a_hex
-from crodump.readers import ByteReader
-from crodump.hexdump import strescape, toout
-from crodump.TableDefinition import TableDefinition
-from crodump.Datafile import Datafile
+from readers import ByteReader
+from hexdump import strescape, toout
+from TableDefinition import TableDefinition
+from Datafile import Datafile
 
 
 class Database:

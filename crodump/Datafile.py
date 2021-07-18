@@ -2,8 +2,8 @@ import io
 import struct
 import zlib
 
-from crodump.koddecoder import koddecode
-from crodump.hexdump import tohex, toout
+from koddecoder import koddecode
+from hexdump import tohex, toout
 
 
 class Datafile:
