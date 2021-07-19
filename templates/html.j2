@@ -5,5 +5,11 @@
     <title>Cronos Database Dump</title>
   </head>
   <body>
+  {% for table in db.enumerate_tables() %}
+    <h1>{{ table.tablename }}</h1>
+    {%- for field in table.fields %}
+      <p>Type: {{ field.typ }} Range: ( {{ field.minval }} - {{ field.maxval }}): {{ field.name }}</p>
+    {%- endfor -%}
+  {% endfor %}
   </body>
 </html>
