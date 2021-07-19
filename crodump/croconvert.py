@@ -29,9 +29,13 @@ def main():
     parser.add_argument(
         "--template", "-t", help="output template to use for conversion", type=str, default="html"
     )
-    parser.add_argument("dbdir", type=str)
+    parser.add_argument("dbdir", type=str, nargs=argparse.REMAINDER)
 
     args = parser.parse_args()
+
+    # Workaround for the broken argparse in cases where there's dashes and spaces in file names
+    args.dbdir = ' '.join(args.dbdir)
+
     convert(args)
 
 if __name__ == "__main__":
