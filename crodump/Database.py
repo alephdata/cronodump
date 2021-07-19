@@ -129,7 +129,9 @@ class Database:
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
-                yield i + 1, [record.decode("cp1251") for record in data[1:].split(b"\x1e")]
+                yield i + 1, [
+                    record.decode("cp1251") for record in data[1:].split(b"\x1e")
+                ]
 
     def recdump(self, args):
         if args.index:
