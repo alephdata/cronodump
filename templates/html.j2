@@ -6,10 +6,26 @@
   </head>
   <body>
   {% for table in db.enumerate_tables() %}
-    <h1>{{ table.tablename }}</h1>
-    {%- for field in table.fields %}
-      <p>Type: {{ field.typ }} Range: ( {{ field.minval }} - {{ field.maxval }}): {{ field.name }}</p>
-    {%- endfor -%}
-  {% endfor %}
+    <table>
+      <caption>{{ table.tablename }}</caption>
+      <thead>
+        <tr>
+        {%- for field in table.fields %}
+          <th>{{ field.name }}</th>
+        {%- endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {%- for system_number, record in db.enumerate_records( table ) %}
+        <tr>
+            <td>{{ system_number }}</td>
+          {%- for field in record %}
+            <td>{{ field }}</td>
+          {%- endfor %}
+        </tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
   </body>
 </html>
