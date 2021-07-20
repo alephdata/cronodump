@@ -37,12 +37,8 @@ def main():
         type=str,
         default="html",
     )
-    parser.add_argument("dbdir", type=str, nargs=argparse.REMAINDER)
-
+    parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
-
-    # Workaround for the broken argparse in cases where there's dashes and spaces in file names
-    args.dbdir = " ".join(args.dbdir)
 
     convert(args)
 
