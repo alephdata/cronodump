@@ -107,11 +107,11 @@ class TableDefinition:
 
         print(str(self))
 
-        for field in self.fields:
+        for offset, field in enumerate(self.fields):
             if args.verbose:
                 print(
-                    "field: @%04x: %04x - %s"
-                    % (field.byteoffset, len(field.defdata), tohex(field.defdata))
+                    "field: @%4d: %04x - %s"
+                    % (offset, len(field.defdata), tohex(field.defdata))
                 )
             print(str(field))
         if args.verbose:
