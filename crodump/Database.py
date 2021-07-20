@@ -117,9 +117,9 @@ class Database:
 
         for k, v in dbdef.items():
             if k.startswith("Base") and k[4:].isnumeric():
-                if files and k[4:] == '000':
+                if files and k[4:] == "000":
                     yield TableDefinition(v)
-                if not files and k[4:] != '000':
+                if not files and k[4:] != "000":
                     yield TableDefinition(v)
 
     def enumerate_records(self, table):
@@ -137,8 +137,7 @@ class Database:
                 ]
 
     def enumerate_files(self, table):
-        """
-        """
+        """ """
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
