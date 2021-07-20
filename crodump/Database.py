@@ -109,7 +109,7 @@ class Database:
                 tbdef = TableDefinition(v)
                 tbdef.dump(args)
 
-    def enumerate_tables(self):
+    def enumerate_tables(self, files):
         dbinfo = self.stru.readrec(1)
         if dbinfo[:1] != b"\x03":
             print("WARN: expected dbinfo to start with 0x03")
@@ -117,7 +117,10 @@ class Database:
 
         for k, v in dbdef.items():
             if k.startswith("Base") and k[4:].isnumeric():
-                yield TableDefinition(v)
+                if files and k[4:] == '000':
+                    yield TableDefinition(v)
+                if not files and k[4:] != '000':
+                    yield TableDefinition(v)
 
     def enumerate_records(self, table):
         """
@@ -132,6 +135,14 @@ class Database:
                 yield i + 1, [
                     record.decode("cp1251") for record in data[1:].split(b"\x1e")
                 ]
+
+    def enumerate_files(self, table):
+        """
+        """
+        for i in range(self.nrofrecords()):
+            data = self.bank.readrec(i + 1)
+            if data and data[0] == table.tableid:
+                yield i + 1, data[1:]
 
     def recdump(self, args):
         if args.index:

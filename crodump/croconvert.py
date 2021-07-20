@@ -2,6 +2,7 @@ from koddecoder import decode_kod
 from Database import Database
 from sys import exit
 from os.path import dirname, abspath, join
+import base64
 
 """
 python3 croconvert.py -t html chechnya_proverki_ul_2012/
@@ -23,7 +24,7 @@ def convert(args):
     template_dir = join(dirname(dirname(abspath(__file__))), "templates")
     j2_env = Environment(loader=FileSystemLoader(template_dir))
     j2_templ = j2_env.get_template(args.template + ".j2")
-    print(j2_templ.render(db=db))
+    print(j2_templ.render(db=db, base64=base64))
 
 
 def main():

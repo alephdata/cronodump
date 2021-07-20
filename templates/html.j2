@@ -5,7 +5,28 @@
     <title>Cronos Database Dump</title>
   </head>
   <body>
-  {% for table in db.enumerate_tables() %}
+  {% for table in db.enumerate_tables(files=True) %}
+    <table>
+      <caption><{{ table.tablename }}/caption>
+      <thead>
+        <tr>
+        {%- for field in table.fields %}
+          <th>{{ field.name }}</th>
+        {%- endfor %}
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for system_number, file in db.enumerate_files(table) %}
+        <tr>
+          <td>{{ system_number }}</td>
+          <td><a href="data:application/x-binary;base64,{{ base64.b64encode( file ).decode('utf-8') }}">File content</a></td>
+        <tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+  {% for table in db.enumerate_tables(files=False) %}
     <table>
       <caption>{{ table.tablename }}</caption>
       <thead>
