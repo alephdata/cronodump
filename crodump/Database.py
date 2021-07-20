@@ -1,4 +1,4 @@
-from os import path, scandir
+import os
 import re
 from binascii import b2a_hex
 from readers import ByteReader
@@ -37,9 +37,9 @@ class Database:
         Returns None when no matching file was not found.
         """
         basename = "Cro%s.%s" % (name, ext)
-        for fn in scandir(self.dbdir):
+        for fn in os.scandir(self.dbdir):
             if basename.lower() == fn.name.lower():
-                return path.join(self.dbdir, fn.name)
+                return os.path.join(self.dbdir, fn.name)
 
     def dump(self, args):
         if self.stru:
