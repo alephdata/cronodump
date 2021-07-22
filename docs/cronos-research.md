@@ -150,9 +150,12 @@ The toplevel table-id for CroStru and CroSys is #3, while referenced records hav
 CroBank.dat contains the actual database entries for multiple tables as described in the CroStru file. After each chunk is re-assembled (and potentially decoded with the per block offset being the record number in the .tad file).
 
 Its first byte defines, which table it belongs to. It is encoded in cp1251 (or possibly IBM866) with actual column data separated by 0x1e.
-There is an extra concept of sub fields in those columns, indicated by a 0x1d byte.
-Also files seem have have special fields, starting with a 0x1b byte.
 
+There is an extra concept of sub fields in those columns, indicated by a 0x1d byte.
+
+Also files seem have have special fields, starting with a 0x1b byte. It is at least used for field types 6 and 9, the 0x1b byte is follewed by a uint32 size of the record. It may then contain further 0x1e bytes which indicate sub field separators.
+
+If used for field type 6, the record begings with two uint32 (the first one mostly 0x00000001, the second one the size of the next strings) followed by three 0x1e separated strings containing file name, file extension and system number of the actual file record data referred to by this record.
 
 ## structure definitions
 
