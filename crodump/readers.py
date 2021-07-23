@@ -12,6 +12,11 @@ class ByteReader:
         self.o += 1
         return struct.unpack_from("<B", self.data, self.o - 1)[0]
 
+    def testbyte(self, byte):
+        if self.o + 1 > len(self.data):
+            raise Exception("EOF")
+        return self.data[self.o] == byte
+
     def readword(self):
         if self.o + 2 > len(self.data):
             raise Exception("EOF")
@@ -39,6 +44,18 @@ class ByteReader:
     def readname(self):
         namelen = self.readbyte()
         return self.readbytes(namelen).decode("cp1251")
+
+    def readtoseperator(self, sep):
+        if self.o >= len(self.data):
+            raise Exception("EOF")
+        oldoff = self.o
+        off = self.data.find(sep, self.o)
+        if off >= 0:
+            self.o = off + 1
+            return self.data[oldoff:off]
+        else:
+            self.o = len(self.data)
+            return self.data[oldoff:]
 
     def eof(self):
         return self.o >= len(self.data)

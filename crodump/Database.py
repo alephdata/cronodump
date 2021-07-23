@@ -5,6 +5,7 @@ from readers import ByteReader
 from hexdump import strescape, toout
 from TableDefinition import TableDefinition
 from Datafile import Datafile
+from Record import Record
 
 
 class Database:
@@ -132,9 +133,7 @@ class Database:
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
-                yield i + 1, [
-                    record.decode("cp1251") for record in data[1:].split(b"\x1e")
-                ]
+                yield i + 1, Record(table.fields, data[1:])
 
     def enumerate_files(self, table):
         """ """

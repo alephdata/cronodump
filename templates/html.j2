@@ -40,8 +40,8 @@
         {%- for system_number, record in db.enumerate_records( table ) %}
         <tr>
             <td>{{ system_number }}</td>
-          {%- for field in record %}
-            <td>{{ field }}</td>
+          {%- for field in record.fields %}
+            <td>{{ field.content }}</td>
           {%- endfor %}
         </tr>
         {%- endfor %}
