@@ -28,11 +28,8 @@ def main():
                 tab.dump(args)
                 print("nr=%d" % db.nrofrecords())
                 i = 0
-                for sysnum, rec in db.enumerate_records(tab):
-                    # beware to skip tab.fields[0], which is the 'sysnum'
-                    # since the rec does not include the sysnum.
-                    print(">> %s -- %s" % (tab.fields[0], sysnum))
-                    for field, fielddef in zip(rec, tab.fields[1:]):
+                for rec in db.enumerate_records(tab):
+                    for field, fielddef in zip(rec, tab.fields):
                         print(">> %s -- %s" % (fielddef, asasc(field)))
                     i += 1
                     if i > 100:

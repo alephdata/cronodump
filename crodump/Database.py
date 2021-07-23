@@ -133,7 +133,7 @@ class Database:
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
-                yield i + 1, Record(table.fields, data[1:])
+                yield Record(i + 1, table.fields, data[1:])
 
     def enumerate_files(self, table):
         """ """

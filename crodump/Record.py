@@ -9,9 +9,14 @@ class Field:
 
     def decode(self, fielddef, data):
         self.typ = fielddef.typ
+        self.data = data
+
+        # if typ is systemnumber, just convert to string for presentation
+        if self.typ == 0:
+            self.content = str(data)
 
         # decode internal file reference
-        if self.typ == 6:
+        elif self.typ == 6:
             rd = ByteReader(data)
             self.flag = rd.readdword()
             self.remlen = rd.readdword()
@@ -19,22 +24,25 @@ class Field:
             self.extname = rd.readtoseperator(b"\x1e").decode("cp1251")
             self.filedatarecord = rd.readtoseperator(b"\x1e").decode("cp1251")
             self.content = " ".join([self.filename, self.extname, self.filedatarecord])
+
+        # currently assuming everything else to be strings, which is wrong
         else:
             self.content = data.decode("cp1251")
 
 
 class Record:
-    def __init__(self, tabledef, data):
-        self.decode(tabledef, data)
+    def __init__(self, sysnumber, tabledef, data):
+        self.decode(sysnumber, tabledef, data)
 
-    def decode(self, tabledef, data):
+    def decode(self, sysnumber, tabledef, data):
         """
         decode the fields in a record
         """
         self.data = data
+        self.sysnumber = sysnumber
         self.table = tabledef
 
-        self.fields = []
+        self.fields = [Field(tabledef[0], sysnumber)]
         rd = ByteReader(data)
         for fielddef in tabledef[1:]:
             # read complex record indicated by b"\x1b"
