@@ -42,7 +42,7 @@ class Record:
         self.sysnumber = sysnumber
         self.table = tabledef
 
-        self.fields = [Field(tabledef[0], sysnumber)]
+        self.fields = [Field(tabledef[0], str(sysnumber))]
         rd = ByteReader(data)
         for fielddef in tabledef[1:]:
             # read complex record indicated by b"\x1b"

@@ -110,7 +110,7 @@ class Database:
                 tbdef = TableDefinition(v)
                 tbdef.dump(args)
 
-    def enumerate_tables(self, files):
+    def enumerate_tables(self, files=False):
         dbinfo = self.stru.readrec(1)
         if dbinfo[:1] != b"\x03":
             print("WARN: expected dbinfo to start with 0x03")

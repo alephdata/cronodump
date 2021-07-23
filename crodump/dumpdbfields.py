@@ -29,8 +29,8 @@ def main():
                 print("nr=%d" % db.nrofrecords())
                 i = 0
                 for rec in db.enumerate_records(tab):
-                    for field, fielddef in zip(rec, tab.fields):
-                        print(">> %s -- %s" % (fielddef, asasc(field)))
+                    for field, fielddef in zip(rec.fields, tab.fields):
+                        print(">> %s -- %s" % (fielddef, field.content))
                     i += 1
                     if i > 100:
                         break
