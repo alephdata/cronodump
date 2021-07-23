@@ -25,6 +25,10 @@ class Field:
             self.filedatarecord = rd.readtoseperator(b"\x1e").decode("cp1251")
             self.content = " ".join([self.filename, self.extname, self.filedatarecord])
 
+        # just hexdump foreign keys
+        elif self.typ == 9:
+            self.content = ashex(data)
+
         # currently assuming everything else to be strings, which is wrong
         else:
             self.content = data.decode("cp1251")
@@ -46,7 +50,7 @@ class Record:
         rd = ByteReader(data)
         for fielddef in tabledef[1:]:
             # read complex record indicated by b"\x1b"
-            if rd.testbyte(27):
+            if not rd.eof() and rd.testbyte(27):
                 rd.readbyte()
                 size = rd.readdword()
                 fielddata = rd.readbytes(size)

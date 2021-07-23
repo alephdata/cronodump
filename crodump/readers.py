@@ -46,7 +46,7 @@ class ByteReader:
         return self.readbytes(namelen).decode("cp1251")
 
     def readtoseperator(self, sep):
-        if self.o >= len(self.data):
+        if self.o > len(self.data):
             raise Exception("EOF")
         oldoff = self.o
         off = self.data.find(sep, self.o)
