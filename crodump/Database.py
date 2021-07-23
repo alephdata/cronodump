@@ -1,8 +1,9 @@
 import os
 import re
+from sys import stderr
 from binascii import b2a_hex
 from readers import ByteReader
-from hexdump import strescape, toout
+from hexdump import strescape, toout, ashex
 from TableDefinition import TableDefinition
 from Datafile import Datafile
 from Record import Record
@@ -133,7 +134,10 @@ class Database:
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
-                yield Record(i + 1, table.fields, data[1:])
+                try:
+                    yield Record(i + 1, table.fields, data[1:])
+                except Exception as e:
+                    print ("Record broken: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
 
     def enumerate_files(self, table):
         """ """
