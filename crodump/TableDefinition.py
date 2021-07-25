@@ -99,7 +99,7 @@ class TableDefinition:
             # Then there's another unknow dword and then (probably section indicator) 02 byte
             self.unk8_ = rd.readdword()
             if rd.readbyte() != 2:
-                print( "Warning: FieldDefinition Section 2 not marked with a 2")
+                print("Warning: FieldDefinition Section 2 not marked with a 2")
             self.unk9 = rd.readdword()
 
             # Then there's the amount of extra fields in the second section
