@@ -80,11 +80,44 @@ class TableDefinition:
 
         self.headerdata = data[: rd.o]
 
+        # There's (at least) two blocks describing fields, ended when encountering ffffffff
         self.fields = []
         for _ in range(nrfields):
             l = rd.readword()
             fielddef = rd.readbytes(l)
             self.fields.append(FieldDefinition(fielddef))
+
+        # Between the first and the second block, there's some byte strings inbetween, count
+        # given in first dword
+        self.extraunkblocks = rd.readdword()
+
+        for _ in range(self.extraunkblocks):
+            l = rd.readword()
+            skip = rd.readbytes(l)
+
+        try:
+            # Then there's another unknow dword and then (probably section indicator) 02 byte
+            self.unk8_ = rd.readdword()
+            if rd.readbyte() != 2:
+                print( "Warning: FieldDefinition Section 2 not marked with a 2")
+            self.unk9 = rd.readdword()
+
+            # Then there's the amount of extra fields in the second section
+            extrafields = rd.readdword()
+
+            for _ in range(extrafields):
+                l = rd.readword()
+                fielddef = rd.readbytes(l)
+                self.fields.append(FieldDefinition(fielddef))
+        except:
+            pass
+
+        try:
+            self.terminator = rd.readdword()
+        except:
+            print("Warning: FieldDefinition section not terminated")
+
+        self.fields.sort(key=lambda field: field.idx2)
 
         self.remainingdata = rd.readbytes()
 
