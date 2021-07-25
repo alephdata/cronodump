@@ -21,7 +21,8 @@ class FieldDefinition:
             self.maxval = rd.readdword()  # max value or length
             self.unk4 = rd.readdword()  # Always 0x00000009 or 0x0001000d
         else:
-            self.idx2 = self.maxval = self.unk4 = None
+            self.idx2 = 0
+            self.maxval = self.unk4 = None
         self.remaining = rd.readbytes()
 
     def __str__(self):
