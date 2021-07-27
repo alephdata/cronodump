@@ -30,7 +30,7 @@ Also note that the v3 cronos app will run without problem on a linux machine usi
 
 All .dat files start with a 19 byte header:
 
-    char      magic[9]      // allways: 'CroFile\x00'
+    char      magic[8]      // allways: 'CroFile\x00'
     uint16    unknown
     char      version[5]    // 01.02, 01.03, 01.04
     uint16    encoding      // 0 or 2 = plain, 1 = KOD, 3 = encrypted
