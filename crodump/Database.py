@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import os
 import re
 from sys import stderr
@@ -8,6 +9,9 @@ from TableDefinition import TableDefinition
 from Datafile import Datafile
 from Record import Record
 
+import sys
+if sys.version_info[0] == 2:
+    sys.exit("cronodump needs python3")
 
 class Database:
     """represent the entire database, consisting of Stru, Index and Bank files"""
@@ -49,9 +53,9 @@ class Database:
         Returns None when no matching file was not found.
         """
         basename = "Cro%s.%s" % (name, ext)
-        for fn in os.scandir(self.dbdir):
-            if basename.lower() == fn.name.lower():
-                return os.path.join(self.dbdir, fn.name)
+        for fn in os.listdir(self.dbdir):
+            if basename.lower() == fn.lower():
+                return os.path.join(self.dbdir, fn)
 
     def dump(self, args):
         """
@@ -153,19 +157,28 @@ class Database:
             for rec in db.enumerate_records(tab):
                 print(sqlformatter(tab, rec))
         """
+        if self.bank.encoding == 3:
+            raise Exception("encrypted records not yet supported")
+
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 try:
                     yield Record(i + 1, table.fields, data[1:])
+                except EOFError:
+                    print("Record too short: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
                 except Exception as e:
                     print("Record broken: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
+                    
 
     def enumerate_files(self, table):
         """
         Yield all file contents found in CroBank for `table`.
         This is most likely the table with id 0.
         """
+        if self.bank.encoding == 3:
+            raise Exception("encrypted records not yet supported")
+
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
