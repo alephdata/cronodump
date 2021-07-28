@@ -1,23 +1,22 @@
 import io
-import struct
-import re
 from koddecoder import decode_kod
-from hexdump import hexdump, asasc, tohex, unhex, strescape, toout
+from hexdump import unhex
 from readers import ByteReader
 from Database import Database
-from collections import defaultdict
-
-"""
-python3 crodump.py crodump chechnya_proverki_ul_2012
-python3 crodump.py kodump -s 6   -o 0x4cc9 -e 0x5d95 chechnya_proverki_ul_2012/CroStru.dat
-"""
+from TableDefinition import TableDefinition
 
 
 def destruct_sys3_def(rd):
+    # todo
     pass
 
 
 def destruct_sys4_def(rd):
+    """
+    decode type 4 of the records found in CroSys.
+
+    This function is only useful for reverse-engineering the CroSys format.
+    """
     n = rd.readdword()
     for _ in range(n):
         marker = rd.readdword()
@@ -30,7 +29,9 @@ def destruct_sys4_def(rd):
 
 def destruct_sys_definition(args, data):
     """
-    decode the 'sys' / dbindex definition
+    Decode the 'sys' / dbindex definition
+
+    This function is only useful for reverse-engineering the CroSys format.
     """
     rd = ByteReader(data)
 
@@ -45,7 +46,9 @@ def destruct_sys_definition(args, data):
 
 def kod_hexdump(args):
     """
-    KOD decode a section of a data file
+    handle the `kodump` subcommand, KOD decode a section of a data file
+
+    This function is mostly useful for reverse-engineering the database format.
     """
     args.offset = int(args.offset, 0)
     if args.length:
@@ -92,7 +95,6 @@ def stru_dump(args):
 
 def sys_dump(args):
     """hexdump all CroSys records"""
-
     db = Database(args.dbdir)
     if db.sys:
         db.sys.dump(args)
@@ -121,7 +123,9 @@ def destruct(args):
     data = unhex(data)
 
     if args.type == 1:
-        destruct_db_definition(args, data)
+        # create a dummy db object
+        db = Database(".")
+        db.dump_db_definition(args, data)
     elif args.type == 2:
         tbdef = TableDefinition(data)
         tbdef.dump(args)
@@ -142,25 +146,13 @@ def main():
     ko.add_argument("--length", "-l", type=str)
     ko.add_argument("--width", "-w", type=str)
     ko.add_argument("--endofs", "-e", type=str)
-    ko.add_argument(
-        "--unhex", "-x", action="store_true", help="assume the input contains hex data"
-    )
-    ko.add_argument(
-        "--shift", "-s", type=str, help="KOD decode with the specified shift"
-    )
-    ko.add_argument(
-        "--increment",
-        "-i",
-        action="store_true",
-        help="assume data is already KOD decoded, but with wrong shift -> dump alternatives.",
-    )
-    ko.add_argument(
-        "--ascdump", "-a", action="store_true", help="CP1251 asc dump of the data"
-    )
+    ko.add_argument("--unhex", "-x", action="store_true", help="assume the input contains hex data")
+    ko.add_argument("--shift", "-s", type=str, help="KOD decode with the specified shift")
+    ko.add_argument("--increment", "-i", action="store_true",
+                    help="assume data is already KOD decoded, but with wrong shift -> dump alternatives.")
+    ko.add_argument("--ascdump", "-a", action="store_true", help="CP1251 asc dump of the data")
     ko.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
-    ko.add_argument(
-        "filename", type=str, nargs="?", help="dump either stdin, or the specified file"
-    )
+    ko.add_argument("filename", type=str, nargs="?", help="dump either stdin, or the specified file")
     ko.set_defaults(handler=kod_hexdump)
 
     p = subparsers.add_parser("crodump", help="CROdumper")
@@ -168,18 +160,14 @@ def main():
     p.add_argument("--koddecode", "-k", action="store_true")
     p.add_argument("--ascdump", "-a", action="store_true")
     p.add_argument("--nokod", "-n", action="store_true")
-    p.add_argument(
-        "--nodecompress", action="store_false", dest="decompress", default="true"
-    )
+    p.add_argument("--nodecompress", action="store_false", dest="decompress", default="true")
     p.add_argument("dbdir", type=str)
     p.set_defaults(handler=cro_dump)
 
     p = subparsers.add_parser("sysdump", help="SYSdumper")
     p.add_argument("--verbose", "-v", action="store_true")
     p.add_argument("--ascdump", "-a", action="store_true")
-    p.add_argument(
-        "--nodecompress", action="store_false", dest="decompress", default="true"
-    )
+    p.add_argument("--nodecompress", action="store_false", dest="decompress", default="true")
     p.add_argument("dbdir", type=str)
     p.set_defaults(handler=sys_dump)
 
@@ -188,18 +176,9 @@ def main():
     p.add_argument("--ascdump", "-a", action="store_true")
     p.add_argument("--maxrecs", "-n", type=str, help="max nr or recots to output")
     p.add_argument("--find1d", action="store_true")
-    p.add_argument(
-        "--inclencrypted",
-        action="store_false",
-        dest="skipencrypted",
-        default="true",
-        help="include encrypted records in the output",
-    )
-    p.add_argument(
-        "--stats",
-        action="store_true",
-        help="calc table stats from the first byte of each record",
-    )
+    p.add_argument("--inclencrypted", action="store_false", dest="skipencrypted", default="true",
+                    help="include encrypted records in the output",)
+    p.add_argument("--stats", action="store_true", help="calc table stats from the first byte of each record",)
     p.add_argument("--index", action="store_true", help="dump CroIndex")
     p.add_argument("--stru", action="store_true", help="dump CroIndex")
     p.add_argument("--bank", action="store_true", help="dump CroBank")

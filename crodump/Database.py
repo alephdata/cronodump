@@ -15,16 +15,26 @@ class Database:
     def __init__(self, dbdir):
         self.dbdir = dbdir
 
+        # Stru+Index+Bank for the components for most databases
         self.stru = self.getfile("Stru")
         self.index = self.getfile("Index")
         self.bank = self.getfile("Bank")
+
+        # the Sys file resides in the "Program Files\Cronos" directory, and
+        # contains an index of all known databases.
         self.sys = self.getfile("Sys")
-        # BankTemp, Int
 
     def nrofrecords(self):
         return len(self.bank.tadidx)
 
     def getfile(self, name):
+        """
+        Returns a Datafile object for `name`.
+        this function expects a `Cro<name>.dat` and a `Cro<name>.tad` file.
+        When no such files exist, or only one, then None is returned.
+
+        `name` is matched case insensitively
+        """
         try:
             datname = self.getname(name, "dat")
             tadname = self.getname(name, "tad")
@@ -35,7 +45,7 @@ class Database:
 
     def getname(self, name, ext):
         """
-        get a case-insensitive filename match for 'name.ext'.
+        Get a case-insensitive filename match for 'name.ext'.
         Returns None when no matching file was not found.
         """
         basename = "Cro%s.%s" % (name, ext)
@@ -44,6 +54,9 @@ class Database:
                 return os.path.join(self.dbdir, fn.name)
 
     def dump(self, args):
+        """
+        Calls the `dump` method on all database components.
+        """
         if self.stru:
             self.stru.dump(args)
         if self.index:
@@ -54,6 +67,9 @@ class Database:
             self.sys.dump(args)
 
     def strudump(self, args):
+        """
+        prints all info found in the CroStru file.
+        """
         if not self.stru:
             print("missing CroStru file")
             return
@@ -112,6 +128,9 @@ class Database:
                 tbdef.dump(args)
 
     def enumerate_tables(self, files=False):
+        """
+        yields a TableDefinition object for all `BaseNNN` entries found in CroStru
+        """
         dbinfo = self.stru.readrec(1)
         if dbinfo[:1] != b"\x03":
             print("WARN: expected dbinfo to start with 0x03")
@@ -126,6 +145,9 @@ class Database:
 
     def enumerate_records(self, table):
         """
+        Yields a Record object for all records in CroBank matching
+        the tableid from `table`
+
         usage:
         for tab in db.enumerate_tables():
             for rec in db.enumerate_records(tab):
@@ -137,16 +159,24 @@ class Database:
                 try:
                     yield Record(i + 1, table.fields, data[1:])
                 except Exception as e:
-                    print ("Record broken: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
+                    print("Record broken: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
 
     def enumerate_files(self, table):
-        """ """
+        """
+        Yield all file contents found in CroBank for `table`.
+        This is most likely the table with id 0.
+        """
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 yield i + 1, data[1:]
 
     def recdump(self, args):
+        """
+        Function for outputing record contents of the various .dat files.
+
+        This function is mostly useful for reverse-engineering the database format.
+        """
         if args.index:
             dbfile = self.index
         elif args.sys:
@@ -199,11 +229,9 @@ class Database:
                 nerr += 1
                 if nerr > 5:
                     break
+
         if args.stats:
-            print(
-                "-- table-id stats --, %d * none, %d * empty"
-                % (nr_recnone, nr_recempty)
-            )
+            print("-- table-id stats --, %d * none, %d * empty" % (nr_recnone, nr_recempty))
             for k, v in enumerate(tabidxref):
                 if v:
                     print("%5d * %02x" % (v, k))
