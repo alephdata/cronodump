@@ -1,4 +1,3 @@
-from koddecoder import decode_kod
 from Database import Database
 from sys import exit, stdout
 from os.path import dirname, abspath, join
@@ -31,13 +30,8 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="CRONOS database coverter")
-    parser.add_argument(
-        "--template",
-        "-t",
-        help="output template to use for conversion",
-        type=str,
-        default="html",
-    )
+    parser.add_argument("--template", "-t", type=str, default="html",
+                        help="output template to use for conversion")
     parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
 

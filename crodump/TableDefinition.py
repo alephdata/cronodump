@@ -1,9 +1,11 @@
-import struct
-from hexdump import hexdump, asasc, tohex, unhex, strescape, toout
+from hexdump import tohex
 from readers import ByteReader
 
 
 class FieldDefinition:
+    """
+    Contains the properties for a single field in a record.
+    """
     def __init__(self, data):
         self.decode(data)
 
@@ -28,24 +30,12 @@ class FieldDefinition:
     def __str__(self):
         if self.typ:
             return "Type: %2d (%2d/%2d) %04x,(%d-%4d),%04x - %-40s -- %s" % (
-                self.typ,
-                self.idx1,
-                self.idx2,
-                self.flags,
-                self.minval,
-                self.maxval,
-                self.unk4,
-                "'%s'" % self.name,
-                tohex(self.remaining),
-            )
+                    self.typ, self.idx1, self.idx2,
+                    self.flags, self.minval, self.maxval, self.unk4,
+                    "'%s'" % self.name, tohex(self.remaining))
         else:
             return "Type: %2d %2d    %d,%d       - '%s'" % (
-                self.typ,
-                self.idx1,
-                self.flags,
-                self.minval,
-                self.name,
-            )
+                    self.typ, self.idx1, self.flags, self.minval, self.name)
 
 
 class TableDefinition:
@@ -63,9 +53,9 @@ class TableDefinition:
         if self.version > 1:
             _ = rd.readbyte()  # always 0 anyway
 
-        self.unk2 = (
-            rd.readbyte()
-        )  # if this is not 5 (but 9), there's another 4 bytes inserted, this could be a length-byte.
+        # if this is not 5 (but 9), there's another 4 bytes inserted, this could be a length-byte.
+        self.unk2 = rd.readbyte()
+
         self.unk3 = rd.readbyte()
         if self.unk2 > 5:  # seen only 5 and 9 for now with 9 implying an extra dword
             _ = rd.readdword()
@@ -83,8 +73,8 @@ class TableDefinition:
         # There's (at least) two blocks describing fields, ended when encountering ffffffff
         self.fields = []
         for _ in range(nrfields):
-            l = rd.readword()
-            fielddef = rd.readbytes(l)
+            deflen = rd.readword()
+            fielddef = rd.readbytes(deflen)
             self.fields.append(FieldDefinition(fielddef))
 
         # Between the first and the second block, there's some byte strings inbetween, count
@@ -92,8 +82,8 @@ class TableDefinition:
         self.extraunkblocks = rd.readdword()
 
         for _ in range(self.extraunkblocks):
-            l = rd.readword()
-            skip = rd.readbytes(l)
+            blklen = rd.readword()
+            skip = rd.readbytes(blklen)
 
         try:
             # Then there's another unknow dword and then (probably section indicator) 02 byte
@@ -106,8 +96,8 @@ class TableDefinition:
             extrafields = rd.readdword()
 
             for _ in range(extrafields):
-                l = rd.readword()
-                fielddef = rd.readbytes(l)
+                deflen = rd.readword()
+                fielddef = rd.readbytes(deflen)
                 self.fields.append(FieldDefinition(fielddef))
         except:
             pass
@@ -123,17 +113,9 @@ class TableDefinition:
 
     def __str__(self):
         return "%d,%d<%d,%d,%d>%d  %d,%d '%s'  '%s'" % (
-            self.unk1,
-            self.version,
-            self.unk2,
-            self.unk3,
-            self.unk4,
-            self.tableid,
-            self.unk7,
-            len(self.fields),
-            self.tablename,
-            self.abbrev,
-        )
+                self.unk1, self.version, self.unk2, self.unk3, self.unk4, self.tableid,
+                self.unk7, len(self.fields),
+                self.tablename, self.abbrev)
 
     def dump(self, args):
         if args.verbose:
@@ -141,12 +123,10 @@ class TableDefinition:
 
         print(str(self))
 
-        for offset, field in enumerate(self.fields):
+        for i, field in enumerate(self.fields):
             if args.verbose:
-                print(
-                    "field: @%4d: %04x - %s"
-                    % (offset, len(field.defdata), tohex(field.defdata))
-                )
+                print("field#%2d: %04x - %s" % (
+                    i, len(field.defdata), tohex(field.defdata)))
             print(str(field))
         if args.verbose:
             print("remaining: %s" % tohex(self.remainingdata))

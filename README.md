@@ -20,6 +20,19 @@ will create an HTML file dumping the table definitions found in the database in 
 
 There's a `bin/crodump` tool to further investigate databases.
 
+# Terminology
+
+We decided to use the more common terminology for database, tables, records, etc.
+Here is a table showing how cronos calls these:
+
+| what | cronos english | cronos russian
+|:------ |:------ |:------ 
+| Database  |  Bank   | Банк 
+| Table     |  Base   | Базы
+| Record    |  Record | Записи
+| Field     |  Field  | поля
+| recid     |  System Number | Системный номер
+
 # License
 
 cronodump is released under the [MIT license](LICENSE).
