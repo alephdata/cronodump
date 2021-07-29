@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from readers import ByteReader
 from hexdump import ashex
 
