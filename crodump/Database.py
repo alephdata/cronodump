@@ -7,6 +7,7 @@ from readers import ByteReader
 from hexdump import strescape, toout, ashex
 from Datamodel import TableDefinition, Record
 from Datafile import Datafile
+import base64
 
 import sys
 if sys.version_info[0] == 2:
@@ -168,7 +169,7 @@ class Database:
                     print("Record too short: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
                 except Exception as e:
                     print("Record broken: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
-                    
+
 
     def enumerate_files(self, table):
         """
@@ -182,6 +183,21 @@ class Database:
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 yield i + 1, data[1:]
+
+
+    def get_record(self, index, asbase64=False):
+        """
+        Retrieve a single record from CroBank with record number `index`.
+        """
+        if self.bank.encoding == 3:
+            raise Exception("encrypted records not yet supported")
+
+        data = self.bank.readrec(int(index))
+        if asbase64:
+            return base64.b64encode(data[1:]).decode('utf-8')
+        else:
+            return data[1:]
+
 
     def recdump(self, args):
         """

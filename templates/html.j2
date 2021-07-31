@@ -40,7 +40,11 @@
         {%- for record in db.enumerate_records( table ) %}
         <tr>
           {%- for field in record.fields %}
+            {%- if field.typ == 6 -%}
+            <td><a download="{{ field.filename }}.{{ field.extname }}" href="data:application/x-binary;base64,{{ db.get_record( field.filedatarecord, True ) }}">{{ field.filename }}.{{ field.extname }}</a></td>
+            {%- else -%}
             <td>{{ field.content }}</td>
+            {%- endif -%}
           {%- endfor %}
         </tr>
         {%- endfor %}
