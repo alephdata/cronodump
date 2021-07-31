@@ -79,11 +79,11 @@ class TableDefinition:
 
         # Between the first and the second block, there's some byte strings inbetween, count
         # given in first dword
-        self.extraunkblocks = rd.readdword()
+        self.extraunkdatastrings = rd.readdword()
 
-        for _ in range(self.extraunkblocks):
-            blklen = rd.readword()
-            skip = rd.readbytes(blklen)
+        for _ in range(self.extraunkdatastrings):
+            datalen = rd.readword()
+            skip = rd.readbytes(datalen)
 
         try:
             # Then there's another unknow dword and then (probably section indicator) 02 byte
@@ -93,9 +93,9 @@ class TableDefinition:
             self.unk9 = rd.readdword()
 
             # Then there's the amount of extra fields in the second section
-            extrafields = rd.readdword()
+            nrextrafields = rd.readdword()
 
-            for _ in range(extrafields):
+            for _ in range(nrextrafields):
                 deflen = rd.readword()
                 fielddef = rd.readbytes(deflen)
                 self.fields.append(FieldDefinition(fielddef))

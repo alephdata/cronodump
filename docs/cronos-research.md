@@ -139,7 +139,7 @@ given the `shift`, the encoded data: `a[0]..a[n-1]` and the decoded data: `b[0].
     encode: a[i] = INV[b[i] + (i+shift)]
 
 
-The original description of an older database format called the per block counter start offset 'sistN' which seems to imply it to be constant for certain entries. They correspond to a "system number" of meta entries visible in the database software. Where these offsets come from is currently unknown, the existing code just brute forces through all offsets and looks for certain sentinels.
+The original description of an older database format called the per block counter start offset 'sistN' which seems to imply it to be constant for certain entries. They correspond to a "system number" of meta entries visible in the database software. For encoded records this is their primary key.
 
 In noticed that the first 256 bytes of CroStru.dat look close to identical (except the first 16 bytes) than CroBank.dat.
 
@@ -153,9 +153,9 @@ Its first byte defines, which table it belongs to. It is encoded in cp1251 (or p
 
 There is an extra concept of sub fields in those columns, indicated by a 0x1d byte.
 
-Also files seem have have special fields, starting with a 0x1b byte. It is at least used for field types 6 and 9, the 0x1b byte is follewed by a uint32 size of the record. It may then contain further 0x1e bytes which indicate sub field separators.
+Fields of field types 6 and 9 start with an 0x1b byte, followed by a uint32 size of the actual fields. It may then contain further 0x1e bytes which indicate sub field separators.
 
-If used for field type 6, the record begings with two uint32 (the first one mostly 0x00000001, the second one the size of the next strings) followed by three 0x1e separated strings containing file name, file extension and system number of the actual file record data referred to by this record.
+If used for field type 6, the field begins with two uint32 (the first one mostly 0x00000001, the second one the size of the next strings) followed by three 0x1e separated strings containing file name, file extension and system number of the actual file record data referred to by this record.
 
 ## structure definitions
 
@@ -197,19 +197,38 @@ the `Base000` entry contains the record number for the table definition of the f
     array {
       uint16 entrysize    -- total nr of bytes in this entry.
       uint16 fieldtype    // see below
-      uint32 fieldindex ??
+      uint32 fieldindex1  // presentation index (i.e. where in the UI it shows)
       Name   fieldname
       uint32 flags
       uint8  alwaysone    // maybe the 'minvalue'
-      uint32 fieldindex ??
+      uint32 fieldindex2  // serialization index (i.e. where in the record in the .dat it appears)
       uint32 fieldsize    // max fieldsize
       uint32 unk4
       ...
       followed by remaining unknown bytes
     } fields[nrfields]
 
+    uint32 extradatstr    // amount of unknown length indexed data strings between field definition blocks
+    array {
+      uint16 datalen
+      uint8[datalen]
+    } datastrings[extradatstr]
+
+    uint32 unk8
+    uint8  fielddefblock  // always 2, probably the number of this block of field definitions
+    uint32 unk9
+
+    uint32 nrextrafields
+    array {
+      ... as above
+    } extrafields[nrextrafields]
+
     followed by remaining unknown bytes
     ...
+
+
+    In order to have field definitions for all the fields in a record from the .dat for that table,
+    fields.append(extrafields) must be sorted by their fieldindex2.
 
 ## field types
 
