@@ -138,7 +138,7 @@ class Datafile:
         """
         Dump decodes all data referenced from the .tad file.
         And optionally print out all unreferenced byte ranges in the .dat file.
-        
+
         This function is mostly useful for reverse-engineering the database format.
 
         the `args` object controls how data is decoded.
