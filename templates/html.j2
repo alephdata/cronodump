@@ -7,7 +7,7 @@
   <body>
   {% for table in db.enumerate_tables(files=True) %}
     <table>
-      <caption><{{ table.tablename }}/caption>
+      <caption>{{ table.tablename }}</caption>
       <thead>
         <tr>
         {%- for field in table.fields %}
