@@ -5,9 +5,8 @@ from sys import stderr
 from binascii import b2a_hex
 from readers import ByteReader
 from hexdump import strescape, toout, ashex
-from TableDefinition import TableDefinition
+from Datamodel import TableDefinition, Record
 from Datafile import Datafile
-from Record import Record
 
 import sys
 if sys.version_info[0] == 2:

@@ -3,7 +3,7 @@ from koddecoder import decode_kod
 from hexdump import unhex
 from readers import ByteReader
 from Database import Database
-from TableDefinition import TableDefinition
+from Datamodel import TableDefinition
 
 
 def destruct_sys3_def(rd):
