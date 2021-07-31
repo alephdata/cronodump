@@ -38,12 +38,25 @@ class FieldDefinition:
             return "Type: %2d %2d    %d,%d       - '%s'" % (
                     self.typ, self.idx1, self.flags, self.minval, self.name)
 
-
-class TableDefinition:
+class TableImage:
     def __init__(self, data):
         self.decode(data)
 
     def decode(self, data):
+        rd = ByteReader(data)
+
+        _ = rd.readbyte()
+        namelen = rd.readdword()
+        self.filename = rd.readbytes(namelen)
+
+        imagelen = rd.readdword()
+        self.data = rd.readbytes(imagelen)
+
+class TableDefinition:
+    def __init__(self, data, image=''):
+        self.decode(data, image)
+
+    def decode(self, data, image):
         """
         decode the 'base' / table definition
         """
@@ -111,6 +124,9 @@ class TableDefinition:
         self.fields.sort(key=lambda field: field.idx2)
 
         self.remainingdata = rd.readbytes()
+
+        if image:
+            self.tableimage = TableImage(image)
 
     def __str__(self):
         return "%d,%d<%d,%d,%d>%d  %d,%d '%s'  '%s'" % (

@@ -27,6 +27,9 @@
     </table>
   {% endfor %}
   {% for table in db.enumerate_tables(files=False) %}
+    {%- if table.tableimage -%}
+      <img src="data:image;base64,{{ base64.b64encode( table.tableimage.data ).decode('utf-8') }}"/>
+    {%- endif -%}
     <table>
       <caption>{{ table.tablename }}</caption>
       <thead>

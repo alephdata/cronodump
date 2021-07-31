@@ -145,7 +145,7 @@ class Database:
                 if files and k[4:] == "000":
                     yield TableDefinition(v)
                 if not files and k[4:] != "000":
-                    yield TableDefinition(v)
+                    yield TableDefinition(v, dbdef.get("BaseImage" + k[4:]))
 
     def enumerate_records(self, table):
         """
