@@ -175,7 +175,7 @@ class Field:
             self.filedatarecord = rd.readtoseperator(b"\x1e").decode("cp1251", 'ignore')
             self.content = " ".join([self.filename, self.extname, self.filedatarecord])
 
-        elif self.typ == 9:
+        elif self.typ == 7 or self.typ == 8 or self.typ == 9:
             # just hexdump foreign keys
             self.content = ashex(data)
 
