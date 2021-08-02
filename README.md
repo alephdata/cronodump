@@ -5,9 +5,7 @@ and dump it to several output formats.
 
 The software is popular among Russian public offices, companies and police agencies.
 
-# Example usage
-
-## Quick start
+# Quick start
 
 In its simplest form, without any dependencies, the croconvert command creates a [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) representation of all the database's tables and a copy of all files contained in the database:
 
@@ -17,7 +15,7 @@ python3 crodump/croconvert.py -t csv test_data/all_field_types
 
 By default it creates a `cronodump-YYYY-mm-DD-HH-MM-SS-ffffff/` directory containing CSV files for each table found. It will under this directory also create a `Files-FL/` directory containing all the files stored in the Database, regardless if they are sill referenced in any data table. All files that are actually referenced (and thus are known by their filename) will be stored under the `Files-Referenced` directory. With the `--outputdir` option you can chose your own dump location.
 
-## Templates
+# Templates
 
 The croconvert command can use the powerful [jinja templating framework](https://jinja.palletsprojects.com/en/3.0.x/) to render more file formats like PostgreSQL and HTML. Use
 
