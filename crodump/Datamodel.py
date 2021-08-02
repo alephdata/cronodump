@@ -43,11 +43,16 @@ class TableImage:
         self.decode(data)
 
     def decode(self, data):
+        if not len(data):
+            self.filename = "none"
+            self.data = b''
+            return
+
         rd = ByteReader(data)
 
         _ = rd.readbyte()
         namelen = rd.readdword()
-        self.filename = rd.readbytes(namelen)
+        self.filename = rd.readbytes(namelen).decode("cp1251", 'ignore')
 
         imagelen = rd.readdword()
         self.data = rd.readbytes(imagelen)
@@ -125,14 +130,13 @@ class TableDefinition:
 
         self.remainingdata = rd.readbytes()
 
-        if image:
-            self.tableimage = TableImage(image)
+        self.tableimage = TableImage(image)
 
     def __str__(self):
-        return "%d,%d<%d,%d,%d>%d  %d,%d '%s'  '%s'" % (
+        return "%d,%d<%d,%d,%d>%d  %d,%d '%s'  '%s'  [TableImage(%d bytes): %s]" % (
                 self.unk1, self.version, self.unk2, self.unk3, self.unk4, self.tableid,
                 self.unk7, len(self.fields),
-                self.tablename, self.abbrev)
+                self.tablename, self.abbrev, len(self.tableimage.data), self.tableimage.filename)
 
     def dump(self, args):
         if args.verbose:

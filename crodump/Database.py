@@ -128,7 +128,7 @@ class Database:
         for k, v in dbdef.items():
             if k.startswith("Base") and k[4:].isnumeric():
                 print("== %s ==" % k)
-                tbdef = TableDefinition(v)
+                tbdef = TableDefinition(v, dbdef.get("BaseImage" + k[4:], b''))
                 tbdef.dump(args)
 
     def enumerate_tables(self, files=False):
@@ -145,7 +145,7 @@ class Database:
                 if files and k[4:] == "000":
                     yield TableDefinition(v)
                 if not files and k[4:] != "000":
-                    yield TableDefinition(v, dbdef.get("BaseImage" + k[4:]))
+                    yield TableDefinition(v, dbdef.get("BaseImage" + k[4:], b''))
 
     def enumerate_records(self, table):
         """
