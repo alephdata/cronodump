@@ -19,7 +19,7 @@ By default it creates a `cronodump-YYYY-mm-DD-HH-MM-SS-ffffff/` directory contai
 
 ## Templates
 
-The croconvert command can use the powerful (jinja templating framework)[https://jinja.palletsprojects.com/en/3.0.x/] to render more file formats like PostgreSQL and HTML. Use
+The croconvert command can use the powerful [jinja templating framework](https://jinja.palletsprojects.com/en/3.0.x/) to render more file formats like PostgreSQL and HTML. Use
 
 ```bash
 python3 -m venv ./venc
@@ -28,7 +28,7 @@ pip install jinja2
 bin/croconvert -t html test_data/all_field_types > test_data.html
 ```
 
-to dump an HTML file with all tables found in the database, files listed and ready for download as inlined (data URI)[https://en.wikipedia.org/wiki/Data_URI_scheme] and all table images inlined as well. Note that the resulting HTML file can be huge for large databases, causing a lot of load on browsers when trying to open them.
+to dump an HTML file with all tables found in the database, files listed and ready for download as inlined [data URI](https://en.wikipedia.org/wiki/Data_URI_scheme) and all table images inlined as well. Note that the resulting HTML file can be huge for large databases, causing a lot of load on browsers when trying to open them.
 
 
 The `-t postgres` command is currently being developed.
