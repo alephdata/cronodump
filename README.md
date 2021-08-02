@@ -13,7 +13,7 @@ In its simplest form, without any dependencies, the croconvert command creates a
 python3 crodump/croconvert.py -t csv test_data/all_field_types
 ```
 
-By default it creates a `cronodump-YYYY-mm-DD-HH-MM-SS-ffffff/` directory containing CSV files for each table found. It will under this directory also create a `Files-FL/` directory containing all the files stored in the Database, regardless if they are sill referenced in any data table. All files that are actually referenced (and thus are known by their filename) will be stored under the `Files-Referenced` directory. With the `--outputdir` option you can chose your own dump location.
+By default it creates a `cronodump-YYYY-mm-DD-HH-MM-SS-ffffff/` directory containing CSV files for each table found. It will under this directory also create a `Files-FL/` directory containing all the files stored in the Database, regardless if they are (still) referenced in any data table. All files that are actually referenced (and thus are known by their filename) will be stored under the `Files-Referenced` directory. With the `--outputdir` option you can chose your own dump location.
 
 # Templates
 
