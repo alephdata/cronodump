@@ -38,6 +38,16 @@ class FieldDefinition:
             return "Type: %2d %2d    %d,%d       - '%s'" % (
                     self.typ, self.idx1, self.flags, self.minval, self.name)
 
+    def sqltype(self):
+        return { 0: "INTEGER PRIMARY KEY",
+                 1: "INTEGER",
+                 2: "VARCHAR(" +  str(self.maxval) + ")",
+                 3: "TEXT", # dictionaray
+                 4: "DATE",
+                 5: "TIMESTAMP",
+                 6: "TEXT", # file reference
+        }.get(self.typ, "TEXT")
+
 class TableImage:
     def __init__(self, data):
         self.decode(data)
