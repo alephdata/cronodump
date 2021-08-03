@@ -1,0 +1,19 @@
+{% for table in db.enumerate_tables(files=False) %}
+
+CREATE TABLE "{{ table.tablename }}" (
+    {%- for field in table.fields %}
+        "{{ field.name }}" {{ field.sqltype() }} {{- ", " if not loop.last else "" -}}
+    {%- endfor %}
+);
+
+INSERT INTO "{{ table.tablename }}" VALUES
+    {%- for record in db.enumerate_records( table ) %}
+        ( {%- for field in record.fields -%}
+            '{{ field.content | replace("'", "''") }}' {{- ", " if not loop.last else "" -}}
+        {%- endfor -%}
+        )
+        {{- ", " if not loop.last else "" -}}
+    {%- endfor %}
+;
+
+{% endfor %}
