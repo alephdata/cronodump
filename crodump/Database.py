@@ -157,9 +157,6 @@ class Database:
             for rec in db.enumerate_records(tab):
                 print(sqlformatter(tab, rec))
         """
-        if self.bank.encoding == 3:
-            raise Exception("encrypted records not yet supported")
-
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
@@ -176,9 +173,6 @@ class Database:
         Yield all file contents found in CroBank for `table`.
         This is most likely the table with id 0.
         """
-        if self.bank.encoding == 3:
-            raise Exception("encrypted records not yet supported")
-
         for i in range(self.nrofrecords()):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
@@ -189,9 +183,6 @@ class Database:
         """
         Retrieve a single record from CroBank with record number `index`.
         """
-        if self.bank.encoding == 3:
-            raise Exception("encrypted records not yet supported")
-
         data = self.bank.readrec(int(index))
         if asbase64:
             return base64.b64encode(data[1:]).decode('utf-8')
@@ -216,9 +207,6 @@ class Database:
 
         if not dbfile:
             print(".dat not found")
-            return
-        if args.skipencrypted and dbfile.encoding == 3:
-            print("Skipping encrypted CroBank")
             return
         nerr = 0
         nr_recnone = 0

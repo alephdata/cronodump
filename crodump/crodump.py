@@ -176,8 +176,6 @@ def main():
     p.add_argument("--ascdump", "-a", action="store_true")
     p.add_argument("--maxrecs", "-n", type=str, help="max nr or recots to output")
     p.add_argument("--find1d", action="store_true")
-    p.add_argument("--inclencrypted", action="store_false", dest="skipencrypted", default="true",
-                    help="include encrypted records in the output",)
     p.add_argument("--stats", action="store_true", help="calc table stats from the first byte of each record",)
     p.add_argument("--index", action="store_true", help="dump CroIndex")
     p.add_argument("--stru", action="store_true", help="dump CroIndex")

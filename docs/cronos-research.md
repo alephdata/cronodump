@@ -33,7 +33,7 @@ All .dat files start with a 19 byte header:
     char      magic[8]      // allways: 'CroFile\x00'
     uint16    unknown
     char      version[5]    // 01.02, 01.03, 01.04
-    uint16    encoding      // 0 or 2 = plain, 1 = KOD, 3 = encrypted
+    uint16    encoding      // bitfield: bit0 = KOD, bit1 = ?
     uint16    blocksize     // 0x0040, 0x0200 or 0x0400
 
 Most Bank files use blocksize == 0x0040
@@ -279,14 +279,4 @@ some records are compressed, the format is like this:
     }
     uint8   tail[3] = { 0, 0, 2 }
 
-## encrypted records
-
-In files with encoding type #3, records are encrypted.
-
-Several things observed:
- * in encrypted .dat files, the first record starts at 0x100, instead of the usual 0x101
- * probably with a fixed key, and no IV. This is likely so because I found several unrelated files where the
-   start of the encrypted data is the same for the first +- bytes.
- * likely a stream of cipherdata xorred with the plaintext, since I found several records which differ in only a few bits.
- * so probably: rc4.
 

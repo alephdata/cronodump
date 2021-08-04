@@ -51,10 +51,8 @@ class Datafile:
         #   0200 -> Stru  or Sys
 
         # encoding
-        #   0000
-        #   0001  --> 'KOD encoded'
-        #   0002
-        #   0003  --> encrypted
+        #   bit0 = 'KOD encoded'
+        #   bit1 = ?
 
     def readtad(self):
         """
@@ -115,7 +113,7 @@ class Datafile:
         else:
             encdat = dat
 
-        if self.encoding == 1:
+        if self.encoding & 1:
             encdat = koddecode(idx, encdat)
         if self.iscompressed(encdat):
             encdat = self.decompress(encdat)
@@ -193,7 +191,7 @@ class Datafile:
                 encdat = dat
                 decflags[0] = "*"
 
-            if self.encoding == 1:
+            if self.encoding & 1:
                 decdat = koddecode(i + 1, encdat)
             else:
                 decdat = encdat
