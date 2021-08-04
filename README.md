@@ -29,7 +29,7 @@ bin/croconvert -t html test_data/all_field_types > test_data.html
 to dump an HTML file with all tables found in the database, files listed and ready for download as inlined [data URI](https://en.wikipedia.org/wiki/Data_URI_scheme) and all table images inlined as well. Note that the resulting HTML file can be huge for large databases, causing a lot of load on browsers when trying to open them.
 
 
-The `-t postgres` command is currently being developed.
+The `-t postgres` command will dump the table schemes and records as valid `CREATE TABLE` and `INSERT INTO` statements to stdout. This dump can then be imported in a PostgreSQL database. Note that the backslash character is not escaped and thus the [`standard_conforming_strings`](https://www.postgresql.org/docs/current/runtime-config-compatible.html#GUC-STANDARD-CONFORMING-STRINGS) option should be off.
 
 # Inspection
 
