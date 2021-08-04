@@ -31,6 +31,8 @@ to dump an HTML file with all tables found in the database, files listed and rea
 
 The `-t postgres` command will dump the table schemes and records as valid `CREATE TABLE` and `INSERT INTO` statements to stdout. This dump can then be imported in a PostgreSQL database. Note that the backslash character is not escaped and thus the [`standard_conforming_strings`](https://www.postgresql.org/docs/current/runtime-config-compatible.html#GUC-STANDARD-CONFORMING-STRINGS) option should be off.
 
+Pull requests for [more templates supporting other output types](/templates) are welcome.
+
 # Inspection
 
 There's a `bin/crodump` tool to further investigate databases. This might be useful for extracting metadata like path names of table image files or input and output forms. Not all metadata has yet been completely reverse engineered, so some experience with understanding binary dumps might be required.
