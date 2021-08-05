@@ -12,8 +12,26 @@ setup(
     author = "Willem Hengeveld, Dirk Engling",
     author_email = "itsme@xs4all.nl, erdgeist@erdgeist.org",
     description = "Tool and library for extracting data from Cronos databases.",
+    long_description_content_type='text/markdown',
     long_description = """
-Commandline tool which can convert Cronos 'DataBank' Bases to .csv format.
+The cronodump utility can parse most of the databases created by the [CronosPro](https://www.cronos.ru/) database software
+and dump it to several output formats.
+
+The software is popular among Russian public offices, companies and police agencies.
+
+Example usage:
+
+    croconvert --csv <yourdbpath>
+
+Will create a .csv dump of all records in your database.
+
+or:
+
+    crodump strudump <yourdbpath>
+
+Will print details on the internal definitions of the tables present in your database.
+
+For more details see the [README.md](https://github.com/alephdata/cronodump/blob/master/README.md) file.
 """,
     license = "MIT",
     keywords = "cronos dataconversion databaseexport",
