@@ -11,7 +11,7 @@ python3 croconvert.py -t html chechnya_proverki_ul_2012/
 """
 
 
-def convert(args):
+def template_convert(args):
     """looks up template to convert to, parses the database and passes it to jinja2"""
 
     try:
@@ -33,8 +33,8 @@ def safename(name):
     return name.replace(':', '_').replace('/', '_').replace('\\', '_')
 
 
-def cvs(args):
-    """creates a directory with the current timestamp and in it a set of CVS or TSV
+def csv_output(args):
+    """creates a directory with the current timestamp and in it a set of CSV or TSV
        files with all the tables found and an extra directory with all the files"""
     db = Database(args.dbdir)
 
@@ -85,14 +85,15 @@ def main():
     parser = argparse.ArgumentParser(description="CRONOS database converter")
     parser.add_argument("--template", "-t", type=str, default="html",
                         help="output template to use for conversion")
+    parser.add_argument("--csv", "-c", action='store_true', help='create output in .csv format')
     parser.add_argument("--outputdir", "-o", type=str, default="cronodump"+datetime.now().strftime("-%Y-%m-%d-%H-%M-%S-%f"), help="directory to create the dump in")
     parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
 
-    if args.template == "cvs":
-        cvs(args)
+    if args.csv:
+        csv_output(args)
     else:
-        convert(args)
+        template_convert(args)
 
 if __name__ == "__main__":
     main()
