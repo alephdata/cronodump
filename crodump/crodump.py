@@ -1,9 +1,9 @@
 import io
-from koddecoder import decode_kod
-from hexdump import unhex
-from readers import ByteReader
-from Database import Database
-from Datamodel import TableDefinition
+from .koddecoder import decode_kod
+from .hexdump import unhex
+from .readers import ByteReader
+from .Database import Database
+from .Datamodel import TableDefinition
 
 
 def destruct_sys3_def(rd):
@@ -132,13 +132,12 @@ def destruct(args):
     elif args.type == 3:
         destruct_sys_definition(args, data)
 
-
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="CRO hexdumper")
-    subparsers = parser.add_subparsers()
-    parser.set_defaults(handler=None)
+    subparsers = parser.add_subparsers(title='commands', help='Use the --help option for the individual sub commands for more details')
+    parser.set_defaults(handler=lambda args:parser.print_help())
     parser.add_argument("--debug", action="store_true", help="break on exceptions")
 
     ko = subparsers.add_parser("kodump", help="KOD/hex dumper")

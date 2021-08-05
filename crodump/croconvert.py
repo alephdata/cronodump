@@ -1,4 +1,4 @@
-from Database import Database
+from .Database import Database
 from sys import exit, stdout
 from os.path import dirname, abspath, join
 from os import mkdir, chdir
@@ -72,10 +72,11 @@ def cvs(args):
 
     # Write all referenced files with their filename and extension intact
     for reffile in filereferences:
-        filesafename = safename(reffile.filename) + "."  + safename(reffile.extname)
-        content = db.get_record(reffile.filedatarecord)
-        with open(join("Files-Referenced", filesafename), "wb") as binfile:
-            binfile.write(content)
+        if reffile.content:  # only print when file is not NULL
+            filesafename = safename(reffile.filename) + "."  + safename(reffile.extname)
+            content = db.get_record(reffile.filedatarecord)
+            with open(join("Files-Referenced", filesafename), "wb") as binfile:
+                binfile.write(content)
 
 
 def main():

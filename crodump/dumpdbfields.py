@@ -3,7 +3,7 @@
 """
 import os
 import os.path
-from Database import Database
+from .Database import Database
 
 
 def main():

@@ -1,4 +1,5 @@
 #!/bin/sh
 
 BINPATH=`dirname $0`
-python3 "$BINPATH/../crodump/croconvert.py" "$@"
+export PYTHONPATH="$BINPATH/.."
+python3 -mcrodump.croconvert "$@"

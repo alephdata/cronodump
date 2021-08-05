@@ -1,4 +1,4 @@
-from hexdump import hexdump, toout
+from .hexdump import hexdump, toout
 import struct
 
 """

@@ -3,10 +3,10 @@ import os
 import re
 from sys import stderr
 from binascii import b2a_hex
-from readers import ByteReader
-from hexdump import strescape, toout, ashex
-from Datamodel import TableDefinition, Record
-from Datafile import Datafile
+from .readers import ByteReader
+from .hexdump import strescape, toout, ashex
+from .Datamodel import TableDefinition, Record
+from .Datafile import Datafile
 import base64
 
 import sys

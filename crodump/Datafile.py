@@ -2,8 +2,8 @@ import io
 import struct
 import zlib
 
-from koddecoder import koddecode
-from hexdump import tohex, toout
+from .koddecoder import koddecode
+from .hexdump import tohex, toout
 
 class Datafile:
     """Represent a single .dat with it's .tad index file"""

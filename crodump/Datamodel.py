@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from hexdump import tohex, ashex
-from readers import ByteReader
+from .hexdump import tohex, ashex
+from .readers import ByteReader
 
 
 class FieldDefinition:
@@ -174,7 +174,10 @@ class Field:
         self.typ = fielddef.typ
         self.data = data
 
-        if self.typ == 0:
+        if not data:
+            self.content = ""
+            return
+        elif self.typ == 0:
             # typ 0 is the recno, or as cronos calls this: Системный номер, systemnumber.
             # just convert this to string for presentation
             self.content = str(data)
