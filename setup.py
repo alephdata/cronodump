@@ -29,4 +29,5 @@ Commandline tool which can convert Cronos 'DataBank' Bases to .csv format.
         'Topic :: Database',
     ],
     python_requires = '>=3.7',
+    extras_require={ 'templates': ['Jinja2'] },
 )
