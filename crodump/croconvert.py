@@ -29,7 +29,7 @@ def template_convert(args):
     j2_templ.stream(db=db, base64=base64).dump(stdout)
 
 
-def safename(name):
+def safepathname(name):
     return name.replace(':', '_').replace('/', '_').replace('\\', '_')
 
 
@@ -45,7 +45,7 @@ def csv_output(args):
 
     # first dump all non-file tables
     for table in db.enumerate_tables(files=False):
-        tablesafename = safename(table.tablename) + ".csv"
+        tablesafename = safepathname(table.tablename) + ".csv"
 
         with open(tablesafename, 'w', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
@@ -73,7 +73,7 @@ def csv_output(args):
     # Write all referenced files with their filename and extension intact
     for reffile in filereferences:
         if reffile.content:  # only print when file is not NULL
-            filesafename = safename(reffile.filename) + "."  + safename(reffile.extname)
+            filesafename = safepathname(reffile.filename) + "."  + safepathname(reffile.extname)
             content = db.get_record(reffile.filedatarecord)
             with open(join("Files-Referenced", filesafename), "wb") as binfile:
                 binfile.write(content)
