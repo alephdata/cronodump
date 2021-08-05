@@ -7,11 +7,11 @@
   <body>
   {% for table in db.enumerate_tables(files=True) %}
     <table>
-      <caption>{{ table.tablename }}</caption>
+      <caption>{{ table.tablename | e }}</caption>
       <thead>
         <tr>
         {%- for field in table.fields %}
-          <th>{{ field.name }}</th>
+          <th>{{ field.name | e }}</th>
         {%- endfor %}
           <th>Data</th>
         </tr>
@@ -19,7 +19,7 @@
       <tbody>
       {% for system_number, file in db.enumerate_files(table) %}
         <tr>
-          <td>{{ system_number }}</td>
+          <td>{{ system_number | e }}</td>
           <td><a href="data:application/x-binary;base64,{{ base64.b64encode( file ).decode('utf-8') }}">File content</a></td>
         <tr>
       {% endfor %}
@@ -31,11 +31,11 @@
       <img src="data:image;base64,{{ base64.b64encode( table.tableimage.data ).decode('utf-8') }}"/>
     {%- endif -%}
     <table>
-      <caption>{{ table.tablename }}</caption>
+      <caption>{{ table.tablename | e }}</caption>
       <thead>
         <tr>
         {%- for field in table.fields %}
-          <th>{{ field.name }}</th>
+          <th>{{ field.name | e }}</th>
         {%- endfor %}
         </tr>
       </thead>
@@ -44,9 +44,9 @@
         <tr>
           {%- for field in record.fields %}
             {%- if field.typ == 6 and field.content -%}
-            <td><a download="{{ field.filename }}.{{ field.extname }}" href="data:application/x-binary;base64,{{ db.get_record( field.filedatarecord, True ) }}">{{ field.filename }}.{{ field.extname }}</a></td>
+            <td><a download="{{ field.filename }}.{{ field.extname }}" href="data:application/x-binary;base64,{{ db.get_record( field.filedatarecord, True ) }}">{{ field.filename | e }}.{{ field.extname | e }}</a></td>
             {%- else -%}
-            <td>{{ field.content }}</td>
+            <td>{{ field.content | e }}</td>
             {%- endif -%}
           {%- endfor %}
         </tr>
