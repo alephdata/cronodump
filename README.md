@@ -72,7 +72,7 @@ There are several ways of installing `cronodump`:
  * You can run `cronodump` directly from the cloned git repository, by using the shell scripts in the `bin` subdirectory.
  * You can install `cronodump` in your python environment by ruinning: `python setup.py  build install`.
  * You can install `cronodump` from the public [pypi repository](https://pypi.org/project/cronodump/) with `pip install cronodump`.
- * You can install `cronodump` with the `Jinja2` templating from the public [pypi repository](https://pypi.org/project/cronodump/) with `pip install cronodump[templating]`.
+ * You can install `cronodump` with the `Jinja2` templating engine from the public [pypi repository](https://pypi.org/project/cronodump/) with `pip install cronodump[templating]`.
 
 
 # Terminology
