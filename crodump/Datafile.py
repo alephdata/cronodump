@@ -14,10 +14,16 @@ class Datafile:
         self.tad = tad
 
         self.readdathdr()
-        self.readtad()
+        if self.isv3():
+            self.readtadv3()
+        else:
+            self.readtadv4()
 
         self.dat.seek(0, io.SEEK_END)
         self.datsize = self.dat.tell()
+
+    def isv3(self):
+        return self.version < b'01.10'
 
     def readdathdr(self):
         """
@@ -41,10 +47,6 @@ class Datafile:
             raise Exception("not a Crofile")
         self.use64bit = self.version == b"01.03"
 
-        if self.version == b"01.11":
-            # only found in app: v5/CroSys.dat
-            raise Exception("v01.11 format is not yet supported")
-
         # blocksize
         #   0040 -> Bank
         #   0400 -> Index or Sys
@@ -54,7 +56,7 @@ class Datafile:
         #   bit0 = 'KOD encoded'
         #   bit1 = ?
 
-    def readtad(self):
+    def readtadv3(self):
         """
         read and decode the .tad file.
         """
@@ -72,6 +74,19 @@ class Datafile:
             self.tadidx = [ struct.unpack_from("<LLL", indexdata, 12 * _) for _ in range(len(indexdata) // 12) ]
             if len(indexdata) % 12:
                 print("WARN: leftover data in .tad")
+
+    def readtadv4(self):
+        """
+        read and decode the .tad file.
+        """
+        self.tad.seek(0)
+        hdrdata = self.tad.read(4 * 4)
+        unk1, self.nrdeleted, self.firstdeleted, unk2 = struct.unpack("<4L", hdrdata)
+        indexdata = self.tad.read()
+
+        self.tadidx = [ struct.unpack_from("<QLL", indexdata, 16 * _) for _ in range(len(indexdata) // 16) ]
+        if len(indexdata) % 16:
+            print("WARN: leftover data in .tad")
 
     def nrofrecords(self):
         return len(self.tadidx)
@@ -94,15 +109,21 @@ class Datafile:
             # deleted record
             return
 
-        flags = ln >> 24
+        if self.isv3():
+            flags3 = ln >> 24
+            flags4 = 4
+            ln &= 0xFFFFFFF
+        else:
+            flags3 = 1
+            flags4 = ofs >> 56
+            ofs &= (1<<56)-1
 
-        ln &= 0xFFFFFFF
         dat = self.readdata(ofs, ln)
 
         if not dat:
             # empty record
             encdat = dat
-        elif not flags:
+        elif not flags3:
             extofs, extlen = struct.unpack("<LL", dat[:8])
             encdat = dat[8:]
             while len(encdat) < extlen:
@@ -113,12 +134,22 @@ class Datafile:
         else:
             encdat = dat
 
+        if flags4==0 and encdat:
+            unk1, unk2, valsize = struct.unpack_from("<LLL", encdat)
+            encdat = encdat[12:12+valsize]
+
         if self.encoding & 1:
             encdat = koddecode(idx, encdat)
         if self.iscompressed(encdat):
             encdat = self.decompress(encdat)
+        elif self.iscompressedv4(encdat):
+            encdat = self.decompressv4(encdat)
 
         return encdat
+
+    def enumrecords(self):
+        for i in range(len(self.tadidx)):
+            yield self.readrec(i+1)
 
     def enumunreferenced(self, ranges, filesize):
         """
@@ -152,9 +183,16 @@ class Datafile:
             if ln == 0xFFFFFFFF:
                 print("%5d: %08x %08x %08x" % (i + 1, ofs, ln, chk))
                 continue
-            flags = ln >> 24
 
-            ln &= 0xFFFFFFF
+            if self.isv3():
+                flags3 = ln >> 24
+                flags4 = 4
+                ln &= 0xFFFFFFF
+            else:
+                flags3 = 1
+                flags4 = ofs >> 56
+                ofs &= (1<<56)-1
+
             dat = self.readdata(ofs, ln)
             ranges.append((ofs, ofs + ln, "item #%d" % i))
             decflags = [" ", " "]
@@ -164,7 +202,7 @@ class Datafile:
             if not dat:
                 # empty record
                 encdat = dat
-            elif not flags:
+            elif not flags3:
                 if self.use64bit:
                     extofs, extlen = struct.unpack("<QL", dat[:12])
                     o = 12
@@ -191,8 +229,15 @@ class Datafile:
                 encdat = dat
                 decflags[0] = "*"
 
+            if flags4==0 and encdat:
+                unk1, unk2, valsize = struct.unpack_from("<LLL", encdat)
+                encdat = encdat[12:12+valsize]
+
             if self.encoding & 1:
-                decdat = koddecode(i + 1, encdat)
+                if args.nokod:
+                    decdat = encdat
+                else:
+                    decdat = koddecode(i + 1, encdat)
             else:
                 decdat = encdat
                 decflags[0] = " "
@@ -200,9 +245,13 @@ class Datafile:
             if args.decompress and self.iscompressed(decdat):
                 decdat = self.decompress(decdat)
                 decflags[1] = "@"
+            elif args.decompress and self.iscompressedv4(decdat):
+                decdat = self.decompressv4(decdat)
+                decflags[1] = "@"
 
+            # TODO: separate handling for v4
             print("%5d: %08x-%08x: (%02x:%08x) %s %s%s %s" % (
-                    i+1, ofs, ofs + ln, flags, chk,
+                    i+1, ofs, ofs + ln, flags3, chk,
                     infostr, "".join(decflags), toout(args, decdat), tohex(tail)))
 
         if args.verbose:
@@ -226,6 +275,17 @@ class Datafile:
                 return
             o += size + 2
         return True
+
+    def iscompressedv4(self, data):
+        """ NOTE: this is not yet a very good test """
+        return data[2:4] == b"\x08\x00"
+
+    def decompressv4(self, data):
+        o = 0
+        unk1, unk2 = struct.unpack_from(">HH", data, o)
+        storedcrc, = struct.unpack_from("<L", data, o+4)
+        C = zlib.decompressobj(-15)
+        return C.decompress(data[o+8:])
 
     def decompress(self, data):
         """
