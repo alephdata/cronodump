@@ -280,3 +280,44 @@ some records are compressed, the format is like this:
     uint8   tail[3] = { 0, 0, 2 }
 
 
+# v4 format
+
+The header version 01.11 indicates a database created with cronos v4.x.
+
+## .tad
+
+A 4 dword header:
+
+    dword -2
+    dword nr deleted
+    dword first deleted
+    dword 0
+
+16 byte records:
+    qword offset,  with flags in upper 8 bits.
+    dword size
+    dword unk
+
+flags:
+    02  - empty
+    04  - old-style compressed { int16be size; int16be flag int32le crc; byte data[size-6]; } 00 00 02
+    00  - new-style compressed
+
+## .dat
+
+new record structure:  ( crostru )
+    dword ?
+    dword ?
+    dword size
+    byte  data[size]
+
+new compressed record structure:  ( crostru )
+    dword ?
+    dword ?
+    dword size
+    uint16be size
+    uint16be flag
+    uint32le crc
+    byte data[size-6]
+
+
