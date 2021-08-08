@@ -1,6 +1,6 @@
 import io
 from .koddecoder import decode_kod
-from .hexdump import unhex
+from .hexdump import unhex, tohex
 from .readers import ByteReader
 from .Database import Database
 from .Datamodel import TableDefinition
@@ -132,6 +132,24 @@ def destruct(args):
     elif args.type == 3:
         destruct_sys_definition(args, data)
 
+def strucrack(args):
+    db = Database(args.dbdir)
+
+    # clear 'encrypted' bit, so we will get the encrypted records
+    db.stru.encoding &= ~1
+    xref = [ [0]*256 for _ in range(256) ]
+    for i, data in enumerate(db.stru.enumrecords()):
+        for ofs, byte in enumerate(data):
+            xref[(ofs+i+1)%256][byte] += 1
+
+    KOD = [0] * 256
+    for i, xx in enumerate(xref):
+        k, v = max(enumerate(xx), key=lambda kv:kv[1])
+        KOD[k] = i
+
+    print(tohex(bytes(KOD)))
+
+
 def main():
     import argparse
 
@@ -139,6 +157,7 @@ def main():
     subparsers = parser.add_subparsers(title='commands', help='Use the --help option for the individual sub commands for more details')
     parser.set_defaults(handler=lambda args:parser.print_help())
     parser.add_argument("--debug", action="store_true", help="break on exceptions")
+    parser.add_argument("--kod",  type=str, help="specify custom KOD table")
 
     ko = subparsers.add_parser("kodump", help="KOD/hex dumper")
     ko.add_argument("--offset", "-o", type=str, default="0")
@@ -151,12 +170,12 @@ def main():
                     help="assume data is already KOD decoded, but with wrong shift -> dump alternatives.")
     ko.add_argument("--ascdump", "-a", action="store_true", help="CP1251 asc dump of the data")
     ko.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
+    ko.add_argument("--invkod", "-I", action="store_true", help="KOD encode")
     ko.add_argument("filename", type=str, nargs="?", help="dump either stdin, or the specified file")
     ko.set_defaults(handler=kod_hexdump)
 
     p = subparsers.add_parser("crodump", help="CROdumper")
     p.add_argument("--verbose", "-v", action="store_true")
-    p.add_argument("--koddecode", "-k", action="store_true")
     p.add_argument("--ascdump", "-a", action="store_true")
     p.add_argument("--nokod", "-n", action="store_true")
     p.add_argument("--nodecompress", action="store_false", dest="decompress", default="true")
@@ -195,7 +214,16 @@ def main():
     p.add_argument("--type", "-t", type=int, help="what type of record to destruct")
     p.set_defaults(handler=destruct)
 
+    p = subparsers.add_parser("strucrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
+    p.add_argument("dbdir", type=str)
+    p.set_defaults(handler=strucrack)
+
     args = parser.parse_args()
+    if args.kod:
+        if len(args.kod)!=512:
+            raise Exception("--kod should have a 512 hex digit argument")
+        import crodump.koddecoder
+        crodump.koddecoder.newkod(list(unhex(args.kod)))
 
     if args.handler:
         args.handler(args)
