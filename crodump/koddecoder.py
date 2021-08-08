@@ -1,5 +1,6 @@
 from .hexdump import hexdump, toout
 import struct
+from binascii import a2b_hex
 
 """
 Decode CroStru KOD encoding.
@@ -63,6 +64,13 @@ def incdata(data, s):
     return b"".join(struct.pack("<B", (_ + s) & 0xFF) for _ in data)
 
 
+def newkod(kod):
+    """ specify a user selected KOD sbox """
+    global KOD
+    KOD = kod
+    calc_inverse()
+
+
 def decode_kod(args, data):
     """
     various methods of hexdumping KOD decoded data.
@@ -84,7 +92,10 @@ def decode_kod(args, data):
     else:
         # output with all possible 'shift' values.
         for s in range(256):
-            enc = koddecode(s, data)
+            if args.invkod:
+                enc = kodencode(s, data)
+            else:
+                enc = koddecode(s, data)
             print("%02x: %s" % (s, toout(args, enc)))
 
 
