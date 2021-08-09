@@ -202,7 +202,7 @@ class Field:
 
         else:
             # currently assuming everything else to be strings, which is wrong
-            self.content = data.decode("cp1251", 'ignore')
+            self.content = data.rstrip(b"\x00").decode("cp1251", 'ignore')
 
 
 class Record:
