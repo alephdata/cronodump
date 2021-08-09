@@ -1,7 +1,3 @@
-from .hexdump import hexdump, toout
-import struct
-from binascii import a2b_hex
-
 """
 Decode CroStru KOD encoding.
 """
@@ -24,6 +20,7 @@ INITIAL_KOD = [
     0xFC, 0x84, 0xE5, 0xF9, 0x14, 0x19, 0xDF, 0x6E, 0x23, 0xC4, 0x66, 0xEB, 0xCC, 0x22, 0x1C, 0x5C,
 ]
 
+
 class KODcoding:
     """
     class handing KOD encoding and decoding, optionally
@@ -36,6 +33,7 @@ class KODcoding:
         self.inv = [0 for _ in initial]
         for i, x in enumerate(self.kod):
             self.inv[x] = i
+
     def decode(self, o, data):
         """
         decode : shift, a[0]..a[n-1] -> b[0]..b[n-1]

@@ -15,6 +15,7 @@ import sys
 if sys.version_info[0] == 2:
     sys.exit("cronodump needs python3")
 
+
 class Database:
     """represent the entire database, consisting of Stru, Index and Bank files"""
 
@@ -140,6 +141,7 @@ class Database:
                 tbdef.dump(args)
             elif k == "NS1":
                 self.dump_ns1(v)
+
     def dump_ns1(self, data):
         if len(data)<2:
             print("NS1 is unexpectedly short")
@@ -191,10 +193,9 @@ class Database:
                 try:
                     yield Record(i + 1, table.fields, data[1:])
                 except EOFError:
-                    print("Record too short: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
+                    print("Record %d too short: -- %s" % (i+1, ashex(data)), file=stderr)
                 except Exception as e:
-                    print("Record broken: " + str(i + 1) + "  -----> " + ashex(data), file=stderr)
-
+                    print("Record %d broken: ERROR '%s' -- %s" % (i+1, e, ashex(data)), file=stderr)
 
     def enumerate_files(self, table):
         """
@@ -206,7 +207,6 @@ class Database:
             if data and data[0] == table.tableid:
                 yield i + 1, data[1:]
 
-
     def get_record(self, index, asbase64=False):
         """
         Retrieve a single record from CroBank with record number `index`.
@@ -216,7 +216,6 @@ class Database:
             return base64.b64encode(data[1:]).decode('utf-8')
         else:
             return data[1:]
-
 
     def recdump(self, args):
         """

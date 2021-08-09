@@ -1,5 +1,6 @@
 import struct
 
+
 class ByteReader:
     """
     The ByteReader object is used when decoding various variable sized structures.

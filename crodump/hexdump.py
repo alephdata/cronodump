@@ -4,6 +4,7 @@ Several functions for converting bytes to readable text or hex bytes.
 import struct
 from binascii import b2a_hex, a2b_hex
 
+
 def unhex(data):
     """
     convert a possibly space separated list of 2-digit hex values to a byte-array

@@ -3,6 +3,7 @@ import struct
 import zlib
 from .hexdump import tohex, toout
 
+
 class Datafile:
     """Represent a single .dat with it's .tad index file"""
 
@@ -26,8 +27,10 @@ class Datafile:
 
     def isv3(self):
         return self.version in (b'01.02', b'01.03', b'01.04', b'01.05')
+
     def isv4(self):
         return self.version in (b'01.11', b'01.13', b'01.14')
+
     def isv7(self):
         return self.version in (b'01.19',)
 
@@ -123,7 +126,6 @@ class Datafile:
             flags3 = 1
             flags4 = ofs >> 56
             ofs &= (1<<56)-1
-
 
         dat = self.readdata(ofs, ln)
 

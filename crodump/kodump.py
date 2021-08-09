@@ -1,7 +1,11 @@
-from .hexdump import unhex, toout, hexdump
 """
 This module has the functions for the 'kodump' subcommand from the 'crodump' script.
 """
+from .hexdump import unhex, toout, hexdump
+import io
+import struct
+
+
 def decode_kod(kod, args, data):
     """
     various methods of hexdumping KOD decoded data.

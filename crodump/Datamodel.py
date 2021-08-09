@@ -41,12 +41,13 @@ class FieldDefinition:
     def sqltype(self):
         return { 0: "INTEGER PRIMARY KEY",
                  1: "INTEGER",
-                 2: "VARCHAR(" +  str(self.maxval) + ")",
-                 3: "TEXT", # dictionaray
+                 2: "VARCHAR(" + str(self.maxval) + ")",
+                 3: "TEXT",          # dictionaray
                  4: "DATE",
                  5: "TIMESTAMP",
-                 6: "TEXT", # file reference
+                 6: "TEXT",          # file reference
         }.get(self.typ, "TEXT")
+
 
 class TableImage:
     def __init__(self, data):
@@ -66,6 +67,7 @@ class TableImage:
 
         imagelen = rd.readdword()
         self.data = rd.readbytes(imagelen)
+
 
 class TableDefinition:
     def __init__(self, data, image=''):
@@ -128,13 +130,15 @@ class TableDefinition:
                 deflen = rd.readword()
                 fielddef = rd.readbytes(deflen)
                 self.fields.append(FieldDefinition(fielddef))
-        except:
-            pass
+        except Exception as e:
+            print("Warning: Error '%s' parsing FieldDefinitions" % e)
 
         try:
             self.terminator = rd.readdword()
-        except:
+        except EOFError:
             print("Warning: FieldDefinition section not terminated")
+        except Exception as e:
+            print("Warning: Error '%s' parsing Tabledefinition" % e)
 
         self.fields.sort(key=lambda field: field.idx2)
 

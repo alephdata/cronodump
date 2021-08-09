@@ -1,4 +1,3 @@
-import io
 from .kodump import kod_hexdump
 from .hexdump import unhex, tohex
 from .readers import ByteReader
@@ -42,7 +41,6 @@ def destruct_sys_definition(args, data):
         return destruct_sys4_def(rd)
     else:
         raise Exception("unsupported sys record")
-
 
 
 def cro_dump(kod, args):
@@ -105,6 +103,7 @@ def destruct(kod, args):
     elif args.type == 3:
         destruct_sys_definition(args, data)
 
+
 def strucrack(kod, args):
     # start without 'KOD' table, so we will get the encrypted records
     db = Database(args.dbdir, None)
@@ -126,7 +125,7 @@ def strucrack(kod, args):
 
     KOD = [0] * 256
     for i, xx in enumerate(xref):
-        k, v = max(enumerate(xx), key=lambda kv:kv[1])
+        k, v = max(enumerate(xx), key=lambda kv: kv[1])
         KOD[k] = i
 
     print(tohex(bytes(KOD)))
@@ -136,10 +135,11 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="CRO hexdumper")
-    subparsers = parser.add_subparsers(title='commands', help='Use the --help option for the individual sub commands for more details')
-    parser.set_defaults(handler=lambda kod, args:parser.print_help())
+    subparsers = parser.add_subparsers(title='commands',
+                        help='Use the --help option for the individual sub commands for more details')
+    parser.set_defaults(handler=lambda *args: parser.print_help())
     parser.add_argument("--debug", action="store_true", help="break on exceptions")
-    parser.add_argument("--kod",  type=str, help="specify custom KOD table")
+    parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
 
     p = subparsers.add_parser("kodump", help="KOD/hex dumper")

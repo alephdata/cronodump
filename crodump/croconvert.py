@@ -1,3 +1,8 @@
+"""
+Commandline tool which convert a cronos database to .csv, .sql or .html.
+
+python3 croconvert.py -t html chechnya_proverki_ul_2012/
+"""
 from .Database import Database
 from sys import exit, stdout
 from os.path import dirname, abspath, join
@@ -6,14 +11,9 @@ from datetime import datetime
 import base64
 import csv
 
-"""
-python3 croconvert.py -t html chechnya_proverki_ul_2012/
-"""
-
 
 def template_convert(args):
     """looks up template to convert to, parses the database and passes it to jinja2"""
-
     try:
         from jinja2 import Environment, FileSystemLoader
     except ImportError:
@@ -63,7 +63,7 @@ def csv_output(args):
         mkdir(filedir)
 
         for system_number, content in db.enumerate_files(table):
-            with open(join(filedir,str(system_number)), "wb") as binfile:
+            with open(join(filedir, str(system_number)), "wb") as binfile:
                 binfile.write(content)
 
     if len(filereferences):
@@ -72,8 +72,8 @@ def csv_output(args):
 
     # Write all referenced files with their filename and extension intact
     for reffile in filereferences:
-        if reffile.content:  # only print when file is not NULL
-            filesafename = safepathname(reffile.filename) + "."  + safepathname(reffile.extname)
+        if reffile.content:             # only print when file is not NULL
+            filesafename = safepathname(reffile.filename) + "." + safepathname(reffile.extname)
             content = db.get_record(reffile.filedatarecord)
             with open(join("Files-Referenced", filesafename), "wb") as binfile:
                 binfile.write(content)
@@ -86,14 +86,17 @@ def main():
     parser.add_argument("--template", "-t", type=str, default="html",
                         help="output template to use for conversion")
     parser.add_argument("--csv", "-c", action='store_true', help='create output in .csv format')
-    parser.add_argument("--outputdir", "-o", type=str, default="cronodump"+datetime.now().strftime("-%Y-%m-%d-%H-%M-%S-%f"), help="directory to create the dump in")
+    parser.add_argument("--outputdir", "-o", type=str, help="directory to create the dump in")
     parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
 
     if args.csv:
+        if not args.outputdir:
+            args.outputdir = "cronodump"+datetime.now().strftime("-%Y-%m-%d-%H-%M-%S-%f")
         csv_output(args)
     else:
         template_convert(args)
+
 
 if __name__ == "__main__":
     main()
