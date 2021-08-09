@@ -62,6 +62,17 @@ bin/crodump recdump  test_data/all_field_types/
 This will print a hexdump of all records for all tables.
 
 
+## decoding password protected databases
+
+Cronos v4 and higher are able to password protect databases, the protection works
+by modifying the KOD sbox. When the database has a sufficiently large CroStru.dat file,
+it is easy to derive the nodified KOD-sbox from the CroStru file, the `--strucrack` option
+will do this. Note that since this is a statistics based operation, it may not always
+yield the correct KOD sbox.
+
+    crodump --strucrack  recdump <dbpath>
+
+
 # Installing
 
 `cronodump` requires python 3.7 or later. It has been tested on Linux, MacOS and Windows.
