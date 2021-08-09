@@ -5,7 +5,7 @@ from binascii import a2b_hex
 """
 Decode CroStru KOD encoding.
 """
-KOD = [
+INITIAL_KOD = [
     0x08, 0x63, 0x81, 0x38, 0xA3, 0x6B, 0x82, 0xA6, 0x18, 0x0D, 0xAC, 0xD5, 0xFE, 0xBE, 0x15, 0xF6,
     0xA5, 0x36, 0x76, 0xE2, 0x2D, 0x41, 0xB5, 0x12, 0x4B, 0xD8, 0x3C, 0x56, 0x34, 0x46, 0x4F, 0xA4,
     0xD0, 0x01, 0x8B, 0x60, 0x0F, 0x70, 0x57, 0x3E, 0x06, 0x67, 0x02, 0x7A, 0xF8, 0x8C, 0x80, 0xE8,
@@ -23,80 +23,39 @@ KOD = [
     0x7E, 0xAB, 0x59, 0x52, 0x54, 0x9C, 0xD2, 0xE9, 0xEF, 0xDD, 0x37, 0x1E, 0x8F, 0xCB, 0x8A, 0x90,
     0xFC, 0x84, 0xE5, 0xF9, 0x14, 0x19, 0xDF, 0x6E, 0x23, 0xC4, 0x66, 0xEB, 0xCC, 0x22, 0x1C, 0x5C,
 ]
-INV = [0] * 256
 
-
-def calc_inverse():
+class KODcoding:
     """
-    Calculate the inverse of the KOD table.
+    class handing KOD encoding and decoding, optionally
+    with a user specified KOD table.
     """
-    global INV
-    for i, x in enumerate(KOD):
-        INV[x] = i
+    def __init__(self, initial=INITIAL_KOD):
+        self.kod = [_ for _ in initial]
+
+        # calculate the inverse table.
+        self.inv = [0 for _ in initial]
+        for i, x in enumerate(self.kod):
+            self.inv[x] = i
+    def decode(self, o, data):
+        """
+        decode : shift, a[0]..a[n-1] -> b[0]..b[n-1]
+            b[i] = KOD[a[i]]- (i+shift)
+        """
+        return bytes((self.kod[b] - i - o) % 256 for i, b in enumerate(data))
+
+    def encode(self, o, data):
+        """
+        encode : shift, b[0]..b[n-1] -> a[0]..a[n-1]
+            a[i] = INV[b[i]+ (i+shift)]
+        """
+        return bytes(self.inv[(b + i + o) % 256] for i, b in enumerate(data))
 
 
-def koddecode(o, data):
+def new(*args):
     """
-    decode : shift, a[0]..a[n-1] -> b[0]..b[n-1]
-
-        b[i] = KOD[a[i]]- (i+shift)
+    create a KODcoding object with the specified arguments.
     """
-    global KOD
-    return bytes((KOD[b] - i - o) % 256 for i, b in enumerate(data))
+    return KODcoding(*args)
 
 
-def kodencode(o, data):
-    """
-    encode : shift, b[0]..b[n-1] -> a[0]..a[n-1]
 
-        a[i] = INV[b[i]+ (i+shift)]
-
-    """
-    global INV
-    return bytes(INV[(b + i + o) % 256] for i, b in enumerate(data))
-
-
-def incdata(data, s):
-    """
-    add 's' to each byte.
-    This is useful for finding the correct shift from an incorrectly shifted chunk.
-    """
-    return b"".join(struct.pack("<B", (_ + s) & 0xFF) for _ in data)
-
-
-def newkod(kod):
-    """ specify a user selected KOD sbox """
-    global KOD
-    KOD = kod
-    calc_inverse()
-
-
-def decode_kod(args, data):
-    """
-    various methods of hexdumping KOD decoded data.
-    """
-    if args.nokod:
-        # plain hexdump, no KOD decode
-        hexdump(args.offset, data, args)
-
-    elif args.shift:
-        # explicitly specified shift.
-        args.shift = int(args.shift, 0)
-        enc = koddecode(args.shift, data)
-        hexdump(args.offset, enc, args)
-    elif args.increment:
-        # explicitly specified shift.
-        for s in range(256):
-            enc = incdata(data, s)
-            print("%02x: %s" % (s, toout(args, enc)))
-    else:
-        # output with all possible 'shift' values.
-        for s in range(256):
-            if args.invkod:
-                enc = kodencode(s, data)
-            else:
-                enc = koddecode(s, data)
-            print("%02x: %s" % (s, toout(args, enc)))
-
-
-calc_inverse()

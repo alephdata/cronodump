@@ -1,14 +1,12 @@
 import io
 import struct
 import zlib
-
-from .koddecoder import koddecode
 from .hexdump import tohex, toout
 
 class Datafile:
     """Represent a single .dat with it's .tad index file"""
 
-    def __init__(self, name, dat, tad):
+    def __init__(self, name, dat, tad, kod):
         self.name = name
         self.dat = dat
         self.tad = tad
@@ -16,14 +14,22 @@ class Datafile:
         self.readdathdr()
         if self.isv3():
             self.readtadv3()
-        else:
+        elif self.isv4():
             self.readtadv4()
+        else:
+            raise Exception("Unsupported database version")
 
         self.dat.seek(0, io.SEEK_END)
         self.datsize = self.dat.tell()
 
+        self.kod = kod
+
     def isv3(self):
-        return self.version < b'01.10'
+        return self.version in (b'01.02', b'01.03', b'01.04', b'01.05')
+    def isv4(self):
+        return self.version in (b'01.11', b'01.13', b'01.14')
+    def isv7(self):
+        return self.version in (b'01.19',)
 
     def readdathdr(self):
         """
@@ -54,7 +60,7 @@ class Datafile:
 
         # encoding
         #   bit0 = 'KOD encoded'
-        #   bit1 = ?
+        #   bit1 = compressed
 
     def readtadv3(self):
         """
@@ -113,10 +119,11 @@ class Datafile:
             flags3 = ln >> 24
             flags4 = 4
             ln &= 0xFFFFFFF
-        else:
+        elif self.isv4():
             flags3 = 1
             flags4 = ofs >> 56
             ofs &= (1<<56)-1
+
 
         dat = self.readdata(ofs, ln)
 
@@ -139,10 +146,12 @@ class Datafile:
             encdat = encdat[12:12+valsize]
 
         if self.encoding & 1:
-            encdat = koddecode(idx, encdat)
-        if self.iscompressed(encdat):
+            if self.kod:
+                encdat = self.kod.decode(idx, encdat)
+
+        if self.isv3() and self.iscompressed(encdat):
             encdat = self.decompress(encdat)
-        elif self.iscompressedv4(encdat):
+        elif self.isv4() and self.iscompressedv4(encdat):
             encdat = self.decompressv4(encdat)
 
         return encdat
@@ -180,6 +189,8 @@ class Datafile:
         ranges = []  # keep track of used bytes in the .dat file.
 
         for i, (ofs, ln, chk) in enumerate(self.tadidx):
+            if args.maxrecs and i==args.maxrecs:
+                break
             if ln == 0xFFFFFFFF:
                 print("%5d: %08x %08x %08x" % (i + 1, ofs, ln, chk))
                 continue
@@ -188,7 +199,7 @@ class Datafile:
                 flags3 = ln >> 24
                 flags4 = 4
                 ln &= 0xFFFFFFF
-            else:
+            elif self.isv4():
                 flags3 = 1
                 flags4 = ofs >> 56
                 ofs &= (1<<56)-1
@@ -234,20 +245,21 @@ class Datafile:
                 encdat = encdat[12:12+valsize]
 
             if self.encoding & 1:
-                if args.nokod:
-                    decdat = encdat
+                if self.kod:
+                    decdat = self.kod.decode(i + 1, encdat)
                 else:
-                    decdat = koddecode(i + 1, encdat)
+                    decdat = encdat
             else:
                 decdat = encdat
                 decflags[0] = " "
 
-            if args.decompress and self.iscompressed(decdat):
-                decdat = self.decompress(decdat)
-                decflags[1] = "@"
-            elif args.decompress and self.iscompressedv4(decdat):
-                decdat = self.decompressv4(decdat)
-                decflags[1] = "@"
+            if args.decompress:
+                if self.isv3() and self.iscompressed(decdat):
+                    decdat = self.decompress(decdat)
+                    decflags[1] = "@"
+                elif self.isv4() and self.iscompressedv4(decdat):
+                    decdat = self.decompressv4(decdat)
+                    decflags[1] = "@"
 
             # TODO: separate handling for v4
             print("%5d: %08x-%08x: (%02x:%08x) %s %s%s %s" % (

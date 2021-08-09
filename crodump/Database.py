@@ -8,6 +8,8 @@ from .hexdump import strescape, toout, ashex
 from .Datamodel import TableDefinition, Record
 from .Datafile import Datafile
 import base64
+import struct
+import crodump.koddecoder
 
 import sys
 if sys.version_info[0] == 2:
@@ -16,8 +18,14 @@ if sys.version_info[0] == 2:
 class Database:
     """represent the entire database, consisting of Stru, Index and Bank files"""
 
-    def __init__(self, dbdir):
+    def __init__(self, dbdir, kod=crodump.koddecoder.new()):
+        """
+        `dbdir` is the directory containing the Cro*.dat and Cro*.tad files.
+        `kod` is optionally a KOD coder object.
+              by default the v3 KOD coding will be used.
+        """
         self.dbdir = dbdir
+        self.kod = kod
 
         # Stru+Index+Bank for the components for most databases
         self.stru = self.getfile("Stru")
@@ -43,7 +51,7 @@ class Database:
             datname = self.getname(name, "dat")
             tadname = self.getname(name, "tad")
             if datname and tadname:
-                return Datafile(name, open(datname, "rb"), open(tadname, "rb"))
+                return Datafile(name, open(datname, "rb"), open(tadname, "rb"), self.kod)
         except IOError:
             return
 
@@ -130,6 +138,26 @@ class Database:
                 print("== %s ==" % k)
                 tbdef = TableDefinition(v, dbdef.get("BaseImage" + k[4:], b''))
                 tbdef.dump(args)
+            elif k == "NS1":
+                self.dump_ns1(v)
+    def dump_ns1(self, data):
+        if len(data)<2:
+            print("NS1 is unexpectedly short")
+            return
+        unk1, sh, = struct.unpack_from("<BB", data, 0)
+
+        # NS1 is encoded with the default KOD table,
+        # so we are not using stru.kod here.
+        ns1kod = crodump.koddecoder.new()
+        decoded_data = ns1kod.decode(sh, data[2:])
+
+        if len(decoded_data) < 12:
+            print("NS1 is unexpectedly short")
+            return
+        serial, unk2, pwlen, = struct.unpack_from("<LLL", decoded_data, 0)
+        password = decoded_data[12:12+pwlen].decode('cp1251')
+
+        print("== NS1: (%02x,%02x) -> %6d, %d, %d:'%s'" % (unk1, sh, serial, unk2, pwlen, password))
 
     def enumerate_tables(self, files=False):
         """
@@ -218,7 +246,7 @@ class Database:
                 data = dbfile.readrec(i)
                 if args.find1d:
                     if data and (data.find(b"\x1d") > 0 or data.find(b"\x1b") > 0):
-                        print("%d -> %s" % (i, b2a_hex(data)))
+                        print("record with '1d': %d -> %s" % (i, b2a_hex(data)))
                         break
 
                 elif not args.stats:
