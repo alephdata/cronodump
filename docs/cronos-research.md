@@ -305,17 +305,14 @@ flags:
 
 ## .dat
 
-new record structure:  ( crostru )
-    dword ?
-    dword ?
-    dword size
+new record structure:
+    uint32 ?
+    uint32 ?
+    uint32 size
     byte  data[size]
 
-new compressed record structure:  ( crostru )
-    dword ?
-    dword ?
-    dword size
-    uint16be size
+new compressed data structure:
+    uint16be sizelike
     uint16be flag
     uint32le crc
     byte data[size-6]
