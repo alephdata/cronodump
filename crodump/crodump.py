@@ -128,7 +128,10 @@ def strucrack(kod, args):
         k, v = max(enumerate(xx), key=lambda kv: kv[1])
         KOD[k] = i
 
-    print(tohex(bytes(KOD)))
+    if not args.silent:
+        print(tohex(bytes(KOD)))
+
+    return KOD
 
 
 def main():
@@ -140,6 +143,7 @@ def main():
     parser.set_defaults(handler=lambda *args: parser.print_help())
     parser.add_argument("--debug", action="store_true", help="break on exceptions")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
+    parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
 
     p = subparsers.add_parser("kodump", help="KOD/hex dumper")
@@ -199,6 +203,7 @@ def main():
 
     p = subparsers.add_parser("strucrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
     p.add_argument("--sys", action="store_true", help="Use CroSys for cracking")
+    p.add_argument("--silent", action="store_true", help="no output")
     p.add_argument("dbdir", type=str)
     p.set_defaults(handler=strucrack)
 
@@ -211,6 +216,14 @@ def main():
         kod = crodump.koddecoder.new(list(unhex(args.kod)))
     elif args.nokod:
         kod = None
+    elif args.strucrack:
+        class Cls: pass
+        cargs = Cls()
+        cargs.dbdir = args.dbdir
+        cargs.sys = False
+        cargs.silent = True
+        cracked = strucrack(None, cargs)
+        kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()
 
