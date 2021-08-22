@@ -123,7 +123,7 @@ class Datafile:
             flags4 = 4
             ln &= 0xFFFFFFF
         elif self.isv4():
-            flags3 = 1
+            flags3 = 0
             flags4 = ofs >> 56
             ofs &= (1<<56)-1
 
@@ -133,19 +133,24 @@ class Datafile:
             # empty record
             encdat = dat
         elif not flags3:
-            extofs, extlen = struct.unpack("<LL", dat[:8])
-            encdat = dat[8:]
-            while len(encdat) < extlen:
-                dat = self.readdata(extofs, self.blocksize)
-                (extofs,) = struct.unpack("<L", dat[:4])
-                encdat += dat[4:]
-            encdat = encdat[:extlen]
+            if self.isv4():
+                extofs, extlen = struct.unpack("<QL", dat[:12])
+                encdat = dat[12:]
+                while len(encdat) < extlen:
+                    dat = self.readdata(extofs, self.blocksize)
+                    (extofs,) = struct.unpack("<Q", dat[:8])
+                    encdat += dat[8:]
+                encdat = encdat[:extlen]
+            else:  # isv3()
+                extofs, extlen = struct.unpack("<LL", dat[:8])
+                encdat = dat[8:]
+                while len(encdat) < extlen:
+                    dat = self.readdata(extofs, self.blocksize)
+                    (extofs,) = struct.unpack("<L", dat[:4])
+                    encdat += dat[4:]
+                encdat = encdat[:extlen]
         else:
             encdat = dat
-
-        if flags4==0 and encdat:
-            unk1, unk2, valsize = struct.unpack_from("<LLL", encdat)
-            encdat = encdat[12:12+valsize]
 
         if self.encoding & 1:
             if self.kod:
