@@ -4,6 +4,7 @@ Commandline tool which convert a cronos database to .csv, .sql or .html.
 python3 croconvert.py -t html chechnya_proverki_ul_2012/
 """
 from .Database import Database
+from .crodump import strucrack
 from sys import exit, stdout
 from os.path import dirname, abspath, join
 from os import mkdir, chdir
@@ -12,7 +13,7 @@ import base64
 import csv
 
 
-def template_convert(args):
+def template_convert(kod, args):
     """looks up template to convert to, parses the database and passes it to jinja2"""
     try:
         from jinja2 import Environment, FileSystemLoader
@@ -21,7 +22,7 @@ def template_convert(args):
             "Fatal: Jinja templating engine not found. Install using pip install jinja2"
         )
 
-    db = Database(args.dbdir)
+    db = Database(args.dbdir, kod)
 
     template_dir = join(dirname(dirname(abspath(__file__))), "templates")
     j2_env = Environment(loader=FileSystemLoader(template_dir))
@@ -33,10 +34,10 @@ def safepathname(name):
     return name.replace(':', '_').replace('/', '_').replace('\\', '_')
 
 
-def csv_output(args):
+def csv_output(kod, args):
     """creates a directory with the current timestamp and in it a set of CSV or TSV
        files with all the tables found and an extra directory with all the files"""
-    db = Database(args.dbdir)
+    db = Database(args.dbdir, kod)
 
     mkdir(args.outputdir)
     chdir(args.outputdir)
@@ -87,15 +88,36 @@ def main():
                         help="output template to use for conversion")
     parser.add_argument("--csv", "-c", action='store_true', help='create output in .csv format')
     parser.add_argument("--outputdir", "-o", type=str, help="directory to create the dump in")
+    parser.add_argument("--kod", type=str, help="specify custom KOD table")
+    parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
+    parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
     parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
+
+    import crodump.koddecoder
+    if args.kod:
+        if len(args.kod)!=512:
+            raise Exception("--kod should have a 512 hex digit argument")
+        kod = crodump.koddecoder.new(list(unhex(args.kod)))
+    elif args.nokod:
+        kod = None
+    elif args.strucrack:
+        class Cls: pass
+        cargs = Cls()
+        cargs.dbdir = args.dbdir
+        cargs.sys = False
+        cargs.silent = True
+        cracked = strucrack(None, cargs)
+        kod = crodump.koddecoder.new(cracked)
+    else:
+        kod = crodump.koddecoder.new()
 
     if args.csv:
         if not args.outputdir:
             args.outputdir = "cronodump"+datetime.now().strftime("-%Y-%m-%d-%H-%M-%S-%f")
-        csv_output(args)
+        csv_output(kod, args)
     else:
-        template_convert(args)
+        template_convert(kod, args)
 
 
 if __name__ == "__main__":
