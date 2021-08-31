@@ -116,10 +116,10 @@ class Datafile:
             return
 
         if self.isv3():
-            flags3 = ln >> 24
+            flags = ln >> 24
             ln &= 0xFFFFFFF
         elif self.isv4():
-            flags3 = ofs >> 56
+            flags = ofs >> 56
             ofs &= (1<<56)-1
 
         dat = self.readdata(ofs, ln)
@@ -127,7 +127,7 @@ class Datafile:
         if not dat:
             # empty record
             encdat = dat
-        elif not flags3:
+        elif not flags:
             if self.use64bit:
                 extofs, extlen = struct.unpack("<QL", dat[:12])
                 o = 12
@@ -200,10 +200,10 @@ class Datafile:
                 continue
 
             if self.isv3():
-                flags3 = ln >> 24
+                flags = ln >> 24
                 ln &= 0xFFFFFFF
             elif self.isv4():
-                flags3 = ofs >> 56
+                flags = ofs >> 56
                 # 04 --> data, v3compdata
                 # 02,03 --> deleted
                 # 00 --> extrec
@@ -218,7 +218,7 @@ class Datafile:
             if not dat:
                 # empty record
                 encdat = dat
-            elif not flags3:
+            elif not flags:
                 if self.use64bit:
                     extofs, extlen = struct.unpack("<QL", dat[:12])
                     o = 12
@@ -258,7 +258,7 @@ class Datafile:
 
             # TODO: separate handling for v4
             print("%5d: %08x-%08x: (%02x:%08x) %s %s%s %s" % (
-                    i+1, ofs, ofs + ln, flags3, chk,
+                    i+1, ofs, ofs + ln, flags, chk,
                     infostr, "".join(decflags), toout(args, encdat), tohex(tail)))
 
         if args.verbose:
