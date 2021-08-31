@@ -168,7 +168,12 @@ class Database:
         dbinfo = self.stru.readrec(1)
         if dbinfo[:1] != b"\x03":
             print("WARN: expected dbinfo to start with 0x03")
-        dbdef = self.decode_db_definition(dbinfo[1:])
+        try:
+            dbdef = self.decode_db_definition(dbinfo[1:])
+        except Exception as e:
+            print("ERROR decoding db definition: %s" % e)
+            print("This could possibly mean that you need to try with the --strucrack option")
+            return
 
         for k, v in dbdef.items():
             if k.startswith("Base") and k[4:].isnumeric():
