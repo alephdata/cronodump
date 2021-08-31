@@ -7,6 +7,7 @@ from .Database import Database
 from .crodump import strucrack
 from .hexdump import unhex
 
+
 def processargs(args):
     for dbpath in args.dbdirs:
         if args.recurse:
@@ -17,6 +18,7 @@ def processargs(args):
         else:
             yield dbpath
 
+
 def main():
     import argparse
 
@@ -24,12 +26,11 @@ def main():
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
-    parser.add_argument("--limit", "-m", type=int, default=100)
+    parser.add_argument("--maxrecs", "-m", type=int, default=100)
     parser.add_argument("--recurse", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("dbdirs", type=str, nargs='*')
     args = parser.parse_args()
-
 
     for path in processargs(args):
         try:
@@ -60,7 +61,7 @@ def main():
                     for field, fielddef in zip(rec.fields, tab.fields):
                         print(">> %s -- %s" % (fielddef, field.content))
                     i += 1
-                    if i > args.limit:
+                    if i > args.maxrecs:
                         break
         except Exception as e:
             print("ERROR: %s" % e)
