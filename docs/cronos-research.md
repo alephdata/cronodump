@@ -299,22 +299,11 @@ A 4 dword header:
     dword unk
 
 flags:
-    02  - empty
-    04  - old-style compressed { int16be size; int16be flag int32le crc; byte data[size-6]; } 00 00 02
-    00  - new-style compressed
+    02,03  - deleted record.
+    04  - compressed { int16be size; int16be flag int32le crc; byte data[size-6]; } 00 00 02
+    00  - extended record
 
 ## .dat
 
-new record structure:
-    uint32 ?
-    uint32 ?
-    uint32 size
-    byte  data[size]
-
-new compressed data structure:
-    uint16be sizelike
-    uint16be flag
-    uint32le crc
-    byte data[size-6]
-
+The .dat file of a 01.11 database has 64bit offsets, like the 01.03 file format.
 
