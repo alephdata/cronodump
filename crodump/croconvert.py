@@ -5,6 +5,7 @@ python3 croconvert.py -t html chechnya_proverki_ul_2012/
 """
 from .Database import Database
 from .crodump import strucrack
+from .hexdump import unhex
 from sys import exit, stdout
 from os.path import dirname, abspath, join
 from os import mkdir, chdir
