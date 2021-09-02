@@ -11,14 +11,14 @@ A _cronos database_ consists of those files
 
 and a Vocabulary database with another set of these files in a sub directory Voc/
 
-`CroIndex.*` can be ignored, unless we suspect there to be residues of old data. All words are serialized in little endianess.
+`CroIndex.*` can be ignored for most dumping purposes, unless the user suspects there to be residues of deleted data.
 
 Additionally there are the `CroSys.dat` and `CroSys.tad` files in the cronos application directory, which list the currently
 known databases.
 
 ## app installation
 
-On a default Windows installation, the CronosPro app shows with several encoding issues that can be fixed like this: 
+On a default non-russian Windows installation, the CronosPro app shows with several encoding issues that can be fixed like this:
 
     reg set HKLM\System\CurrentControlSet\Control\Nls\Codepage 1250=c_1251.nls 1252=c_1251.nls
 
@@ -26,13 +26,13 @@ On a default Windows installation, the CronosPro app shows with several encoding
 
 Also note that the v3 cronos app will run without problem on a linux machine using [wine](https://winehq.org/)
 
-##Files ending in .dat
+## Files ending in .dat
 
 All .dat files start with a 19 byte header:
 
     char      magic[8]      // allways: 'CroFile\x00'
     uint16    unknown
-    char      version[5]    // 01.02, 01.03, 01.04
+    char      version[5]    // 01.XX see, below
     uint16    encoding      // bitfield: bit0 = KOD, bit1 = ?
     uint16    blocksize     // 0x0040, 0x0200 or 0x0400
 
@@ -44,7 +44,20 @@ This is followed by a block of 0x101 or 0x100 minus 19 bytes seemingly random da
 
 The unknown word is unclear but seems not to be random, might be a checksum.
 
-##Files ending in .tad
+## File versions
+
+* Pre cronos pro used version `01.01`.
+* Cronos version 3 introduced version indicators of `01.02`, `01.03`, `01.04` and `01.05`.
+ * `01.02` and `01.04` are called "small model", i.e. 32 bit offsets,
+ * `01.03` and `01.05` are called "big model", i.e. 64 bit offsets.
+ * `01.04` and `01.05` are called "lite".
+* Cronos version 4 introduced version indicators of `01.11`, `01.13` and `01.14`.
+ * `01.11` are called "small model", i.e. 32 bit offsets,
+ * `01.13` are called "pro".
+ * `01.14` are called "lite".
+* Cronos version 7 introduced version indicator of `01.19`.
+
+## Files ending in .tad
 
 The first two `uint32` are the number of deleted records and the tad offset to the first deleted entry.
 The deleted entries form a linked list, with the size always 0xFFFFFFFF.
@@ -57,7 +70,7 @@ version `01.02` and `01.04` use 32 bit offsets:
     uint32 size       // with flag in upper bit, 0 -> large record
     uint32 checksum   // but sometimes just 0x00000000, 0x00000001 or 0x00000002
 
-version `01.03` uses 64 bit offsets:
+versions `01.03`, `01.05` and `01.11` use 64 bit offsets:
 
     uint64 offset
     uint32 size       // with flag in upper bit, 0 -> large record
@@ -93,7 +106,7 @@ with the first chunk read from offset1 with length size1 and potentially more pa
 
 However, I never found files with .tad like that. Also the original description insisted on those chunks needing the decode-magic outlined below, but the python implementation only does that for CroStru files and still seems to produce results.
 
-##CroStru
+## CroStru
 
 Interesting files are CroStru.dat containing metadata on the database within blocks whose size and length are found in CroStru.tad. These blocks are rotated byte wise using an sbox found in the cro2sql sources and then each byte is incremented by a one byte counter which is initialised by a per block offset. The sbox looks like this:
 
@@ -145,7 +158,7 @@ In noticed that the first 256 bytes of CroStru.dat look close to identical (exce
 
 The toplevel table-id for CroStru and CroSys is #3, while referenced records have tableid #4.
 
-##CroBank
+## CroBank
 
 CroBank.dat contains the actual database entries for multiple tables as described in the CroStru file. After each chunk is re-assembled (and potentially decoded with the per block offset being the record number in the .tad file).
 
