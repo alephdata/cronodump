@@ -1,14 +1,13 @@
 import io
 import struct
 import zlib
-
-from .koddecoder import koddecode
 from .hexdump import tohex, toout
+
 
 class Datafile:
     """Represent a single .dat with it's .tad index file"""
 
-    def __init__(self, name, dat, tad):
+    def __init__(self, name, dat, tad, kod):
         self.name = name
         self.dat = dat
         self.tad = tad
@@ -18,6 +17,25 @@ class Datafile:
 
         self.dat.seek(0, io.SEEK_END)
         self.datsize = self.dat.tell()
+
+        self.kod = kod
+
+    def isv3(self):
+        #  01.02: 32 bit file offsets
+        #  01.03: 64 bit file offsets
+        #  01.04:  encrypted?, 32bit
+        #  01.05:  encrypted?, 64bit
+        return self.version in (b'01.02', b'01.03', b'01.04', b'01.05')
+
+    def isv4(self):
+        #  01.11  v4 ( 64bit )
+        #  01.14  v4 ( 64bit ), encrypted?
+        #  01.13  ?? I have not seen this version anywhere yet.
+        return self.version in (b'01.11', b'01.13', b'01.14')
+
+    def isv7(self):
+        #  01.19  ?? I have not seen this version anywhere yet.
+        return self.version in (b'01.19',)
 
     def readdathdr(self):
         """
@@ -39,11 +57,7 @@ class Datafile:
         if magic != b"CroFile\x00":
             print("unknown magic: ", magic)
             raise Exception("not a Crofile")
-        self.use64bit = self.version == b"01.03"
-
-        if self.version == b"01.11":
-            # only found in app: v5/CroSys.dat
-            raise Exception("v01.11 format is not yet supported")
+        self.use64bit = self.version in (b"01.03", b"01.05", b"01.11")
 
         # blocksize
         #   0040 -> Bank
@@ -52,18 +66,25 @@ class Datafile:
 
         # encoding
         #   bit0 = 'KOD encoded'
-        #   bit1 = ?
+        #   bit1 = compressed
 
     def readtad(self):
         """
         read and decode the .tad file.
         """
         self.tad.seek(0)
-        hdrdata = self.tad.read(2 * 4)
-        self.nrdeleted, self.firstdeleted = struct.unpack("<2L", hdrdata)
+        if self.isv3():
+            hdrdata = self.tad.read(2 * 4)
+            self.nrdeleted, self.firstdeleted = struct.unpack("<2L", hdrdata)
+        elif self.isv4():
+            hdrdata = self.tad.read(4 * 4)
+            unk1, self.nrdeleted, self.firstdeleted, unk2 = struct.unpack("<4L", hdrdata)
+        else:
+            raise Exception("unsupported .tad version")
+
         indexdata = self.tad.read()
         if self.use64bit:
-            # 01.03 has 64 bit file offsets
+            # 01.03 and 01.11 have 64 bit file offsets
             self.tadidx = [ struct.unpack_from("<QLL", indexdata, 16 * _) for _ in range(len(indexdata) // 16) ]
             if len(indexdata) % 16:
                 print("WARN: leftover data in .tad")
@@ -94,31 +115,53 @@ class Datafile:
             # deleted record
             return
 
-        flags = ln >> 24
+        if self.isv3():
+            flags = ln >> 24
+            ln &= 0xFFFFFFF
+        elif self.isv4():
+            flags = ofs >> 56
+            ofs &= (1<<56)-1
 
-        ln &= 0xFFFFFFF
         dat = self.readdata(ofs, ln)
 
         if not dat:
             # empty record
             encdat = dat
         elif not flags:
-            extofs, extlen = struct.unpack("<LL", dat[:8])
-            encdat = dat[8:]
+            if self.use64bit:
+                extofs, extlen = struct.unpack("<QL", dat[:12])
+                o = 12
+            else:
+                extofs, extlen = struct.unpack("<LL", dat[:8])
+                o = 8
+
+            encdat = dat[o:]
             while len(encdat) < extlen:
                 dat = self.readdata(extofs, self.blocksize)
-                (extofs,) = struct.unpack("<L", dat[:4])
-                encdat += dat[4:]
+                if self.use64bit:
+                    (extofs,) = struct.unpack("<Q", dat[:8])
+                    o = 8
+                else:
+                    (extofs,) = struct.unpack("<L", dat[:4])
+                    o = 4
+                encdat += dat[o:]
+
             encdat = encdat[:extlen]
         else:
             encdat = dat
 
         if self.encoding & 1:
-            encdat = koddecode(idx, encdat)
+            if self.kod:
+                encdat = self.kod.decode(idx, encdat)
+
         if self.iscompressed(encdat):
             encdat = self.decompress(encdat)
 
         return encdat
+
+    def enumrecords(self):
+        for i in range(len(self.tadidx)):
+            yield self.readrec(i+1)
 
     def enumunreferenced(self, ranges, filesize):
         """
@@ -149,12 +192,23 @@ class Datafile:
         ranges = []  # keep track of used bytes in the .dat file.
 
         for i, (ofs, ln, chk) in enumerate(self.tadidx):
+            idx = i + 1
+            if args.maxrecs and i==args.maxrecs:
+                break
             if ln == 0xFFFFFFFF:
-                print("%5d: %08x %08x %08x" % (i + 1, ofs, ln, chk))
+                print("%5d: %08x %08x %08x" % (idx, ofs, ln, chk))
                 continue
-            flags = ln >> 24
 
-            ln &= 0xFFFFFFF
+            if self.isv3():
+                flags = ln >> 24
+                ln &= 0xFFFFFFF
+            elif self.isv4():
+                flags = ofs >> 56
+                # 04 --> data, v3compdata
+                # 02,03 --> deleted
+                # 00 --> extrec
+                ofs &= (1<<56)-1
+
             dat = self.readdata(ofs, ln)
             ranges.append((ofs, ofs + ln, "item #%d" % i))
             decflags = [" ", " "]
@@ -192,18 +246,20 @@ class Datafile:
                 decflags[0] = "*"
 
             if self.encoding & 1:
-                decdat = koddecode(i + 1, encdat)
+                if self.kod:
+                    encdat = self.kod.decode(idx, encdat)
             else:
-                decdat = encdat
                 decflags[0] = " "
 
-            if args.decompress and self.iscompressed(decdat):
-                decdat = self.decompress(decdat)
-                decflags[1] = "@"
+            if args.decompress:
+                if self.iscompressed(encdat):
+                    encdat = self.decompress(encdat)
+                    decflags[1] = "@"
 
+            # TODO: separate handling for v4
             print("%5d: %08x-%08x: (%02x:%08x) %s %s%s %s" % (
                     i+1, ofs, ofs + ln, flags, chk,
-                    infostr, "".join(decflags), toout(args, decdat), tohex(tail)))
+                    infostr, "".join(decflags), toout(args, encdat), tohex(tail)))
 
         if args.verbose:
             # output parts not referenced in the .tad file.
