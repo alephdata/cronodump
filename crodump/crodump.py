@@ -105,6 +105,12 @@ def destruct(kod, args):
 
 
 def strucrack(kod, args):
+    """
+    This function derives the KOD key from the assumption that most bytes in
+    the CroStru records will be zero, given a sufficient number of CroStru
+    items, statistically the most common bytes will encode to '0x00'
+    """
+
     # start without 'KOD' table, so we will get the encrypted records
     db = Database(args.dbdir, None)
     if args.sys:
@@ -134,6 +140,17 @@ def strucrack(kod, args):
     return KOD
 
 def dbcrack(kod, args):
+    """
+    This function derives the KOD key from the assumption that most records in CroIndex
+    and CroBank will be compressed, and start with:
+      uint16 size
+      byte  0x08
+      byte  0x00
+
+    So because the fourth byte in each record will be 0x00 when kod-decoded, I can
+    use this as the inverse of the KOD table, adjusting for record-index.
+
+    """
     # start without 'KOD' table, so we will get the encrypted records
     db = Database(args.dbdir, None)
     xref = [ [0]*256 for _ in range(256) ]
