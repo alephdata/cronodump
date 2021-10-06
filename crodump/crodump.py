@@ -133,6 +133,27 @@ def strucrack(kod, args):
 
     return KOD
 
+def dbcrack(kod, args):
+    # start without 'KOD' table, so we will get the encrypted records
+    db = Database(args.dbdir, None)
+    xref = [ [0]*256 for _ in range(256) ]
+
+    for dbfile in db.bank, db.index:
+        for i in range(1, 10000):
+            rec = dbfile.readrec(i)
+            if len(rec)>11:
+                xref[(i+3)%256][rec[3]] += 1
+
+    KOD = [0] * 256
+    for i, xx in enumerate(xref):
+        k, v = max(enumerate(xx), key=lambda kv: kv[1])
+        KOD[k] = i
+
+    if not args.silent:
+        print(tohex(bytes(KOD)))
+
+    return KOD
+
 
 def main():
     import argparse
@@ -144,6 +165,7 @@ def main():
     parser.add_argument("--debug", action="store_true", help="break on exceptions")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
+    parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroBank.dat + CroIndex.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
 
     p = subparsers.add_parser("kodump", help="KOD/hex dumper")
@@ -207,6 +229,11 @@ def main():
     p.add_argument("dbdir", type=str)
     p.set_defaults(handler=strucrack)
 
+    p = subparsers.add_parser("dbcrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
+    p.add_argument("--silent", action="store_true", help="no output")
+    p.add_argument("dbdir", type=str)
+    p.set_defaults(handler=dbcrack)
+
     args = parser.parse_args()
 
     import crodump.koddecoder
@@ -223,6 +250,14 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cracked = strucrack(None, cargs)
+        kod = crodump.koddecoder.new(cracked)
+    elif args.dbcrack:
+        class Cls: pass
+        cargs = Cls()
+        cargs.dbdir = args.dbdir
+        cargs.sys = False
+        cargs.silent = True
+        cracked = dbcrack(None, cargs)
         kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()
