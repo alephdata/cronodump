@@ -156,9 +156,9 @@ def dbcrack(kod, args):
     xref = [ [0]*256 for _ in range(256) ]
 
     for dbfile in db.bank, db.index:
-        for i in range(1, 10000):
+        for i in range(1, min(10000, dbfile.nrofrecords())):
             rec = dbfile.readrec(i)
-            if len(rec)>11:
+            if rec and len(rec)>11:
                 xref[(i+3)%256][rec[3]] += 1
 
     KOD = [0] * 256
