@@ -65,12 +65,29 @@ This will print a hexdump of all records for all tables.
 ## decoding password protected databases
 
 Cronos v4 and higher are able to password protect databases, the protection works
-by modifying the KOD sbox. When the database has a sufficiently large CroStru.dat file,
-it is easy to derive the nodified KOD-sbox from the CroStru file, the `--strucrack` option
-will do this. Note that since this is a statistics based operation, it may not always
+by modifying the KOD sbox. `cronodump` has two methods of deriving the KOD sbox from
+a database:
+
+Both these methods are statistics based operations, it may not always
 yield the correct KOD sbox.
 
+
+### 1. strudump
+
+When the database has a sufficiently large CroStru.dat file,
+it is easy to derive the nodified KOD-sbox from the CroStru file, the `--strucrack` option
+will do this. 
+
     crodump --strucrack  recdump <dbpath>
+
+### 2. dbdump
+
+When the Bank and Index files are compressed, we can derive the KOD sbox by inspecting
+the fourth byte of each record, which should decode to a zero.
+
+The `--dbcrack` option will do this.
+
+    crodump --dbcrack  recdump <dbpath>
 
 
 # Installing
