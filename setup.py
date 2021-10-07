@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name = "cronodump",
-    version = "1.0.0",
+    version = "1.1.0",
     entry_points = {
         'console_scripts': [
             'croconvert=crodump.croconvert:main',

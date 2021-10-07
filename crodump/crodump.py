@@ -105,6 +105,12 @@ def destruct(kod, args):
 
 
 def strucrack(kod, args):
+    """
+    This function derives the KOD key from the assumption that most bytes in
+    the CroStru records will be zero, given a sufficient number of CroStru
+    items, statistically the most common bytes will encode to '0x00'
+    """
+
     # start without 'KOD' table, so we will get the encrypted records
     db = Database(args.dbdir, None)
     if args.sys:
@@ -120,8 +126,44 @@ def strucrack(kod, args):
 
     xref = [ [0]*256 for _ in range(256) ]
     for i, data in enumerate(table.enumrecords()):
+        if not data: continue
         for ofs, byte in enumerate(data):
             xref[(ofs+i+1)%256][byte] += 1
+
+    KOD = [0] * 256
+    for i, xx in enumerate(xref):
+        k, v = max(enumerate(xx), key=lambda kv: kv[1])
+        KOD[k] = i
+
+    if not args.silent:
+        print(tohex(bytes(KOD)))
+
+    return KOD
+
+def dbcrack(kod, args):
+    """
+    This function derives the KOD key from the assumption that most records in CroIndex
+    and CroBank will be compressed, and start with:
+      uint16 size
+      byte  0x08
+      byte  0x00
+
+    So because the fourth byte in each record will be 0x00 when kod-decoded, I can
+    use this as the inverse of the KOD table, adjusting for record-index.
+
+    """
+    # start without 'KOD' table, so we will get the encrypted records
+    db = Database(args.dbdir, None)
+    xref = [ [0]*256 for _ in range(256) ]
+
+    for dbfile in db.bank, db.index:
+        if not dbfile:
+            print("no data file found in %s" % args.dbdir)
+            return
+        for i in range(1, min(10000, dbfile.nrofrecords())):
+            rec = dbfile.readrec(i)
+            if rec and len(rec)>11:
+                xref[(i+3)%256][rec[3]] += 1
 
     KOD = [0] * 256
     for i, xx in enumerate(xref):
@@ -144,6 +186,7 @@ def main():
     parser.add_argument("--debug", action="store_true", help="break on exceptions")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
+    parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroBank.dat + CroIndex.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
 
     p = subparsers.add_parser("kodump", help="KOD/hex dumper")
@@ -207,6 +250,11 @@ def main():
     p.add_argument("dbdir", type=str)
     p.set_defaults(handler=strucrack)
 
+    p = subparsers.add_parser("dbcrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
+    p.add_argument("--silent", action="store_true", help="no output")
+    p.add_argument("dbdir", type=str)
+    p.set_defaults(handler=dbcrack)
+
     args = parser.parse_args()
 
     import crodump.koddecoder
@@ -223,6 +271,18 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cracked = strucrack(None, cargs)
+        if not cracked:
+            return
+        kod = crodump.koddecoder.new(cracked)
+    elif args.dbcrack:
+        class Cls: pass
+        cargs = Cls()
+        cargs.dbdir = args.dbdir
+        cargs.sys = False
+        cargs.silent = True
+        cracked = dbcrack(None, cargs)
+        if not cracked:
+            return
         kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()

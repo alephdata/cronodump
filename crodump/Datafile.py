@@ -2,6 +2,7 @@ import io
 import struct
 import zlib
 from .hexdump import tohex, toout
+import crodump.koddecoder
 
 
 class Datafile:
@@ -18,7 +19,10 @@ class Datafile:
         self.dat.seek(0, io.SEEK_END)
         self.datsize = self.dat.tell()
 
-        self.kod = kod
+        self.kod = kod if not kod or self.isencrypted() else crodump.koddecoder.new()
+
+    def isencrypted(self):
+        return self.version in (b'01.04', b'01.05') or self.isv4()
 
     def isv3(self):
         #  01.02: 32 bit file offsets

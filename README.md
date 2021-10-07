@@ -16,6 +16,8 @@ bin/croconvert --csv test_data/all_field_types
 
 By default it creates a `cronodump-YYYY-mm-DD-HH-MM-SS-ffffff/` directory containing CSV files for each table found. It will under this directory also create a `Files-FL/` directory containing all the files stored in the Database, regardless if they are (still) referenced in any data table. All files that are actually referenced (and thus are known by their filename) will be stored under the `Files-Referenced` directory. With the `--outputdir` option you can chose your own dump location.
 
+When you get an error message, or just unreadable data, chances are your database is protected. You may need to look into the `--dbcrack` or `--strucrack` options, explained below.
+
 
 # Templates
 
@@ -65,12 +67,29 @@ This will print a hexdump of all records for all tables.
 ## decoding password protected databases
 
 Cronos v4 and higher are able to password protect databases, the protection works
-by modifying the KOD sbox. When the database has a sufficiently large CroStru.dat file,
-it is easy to derive the nodified KOD-sbox from the CroStru file, the `--strucrack` option
-will do this. Note that since this is a statistics based operation, it may not always
+by modifying the KOD sbox. `cronodump` has two methods of deriving the KOD sbox from
+a database:
+
+Both these methods are statistics based operations, it may not always
 yield the correct KOD sbox.
 
+
+### 1. strudump
+
+When the database has a sufficiently large CroStru.dat file,
+it is easy to derive the nodified KOD-sbox from the CroStru file, the `--strucrack` option
+will do this. 
+
     crodump --strucrack  recdump <dbpath>
+
+### 2. dbdump
+
+When the Bank and Index files are compressed, we can derive the KOD sbox by inspecting
+the fourth byte of each record, which should decode to a zero.
+
+The `--dbcrack` option will do this.
+
+    crodump --dbcrack  recdump <dbpath>
 
 
 # Installing

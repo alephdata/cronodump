@@ -4,7 +4,7 @@ Commandline tool which convert a cronos database to .csv, .sql or .html.
 python3 croconvert.py -t html chechnya_proverki_ul_2012/
 """
 from .Database import Database
-from .crodump import strucrack
+from .crodump import strucrack, dbcrack
 from .hexdump import unhex
 from sys import exit, stdout
 from os.path import dirname, abspath, join
@@ -91,6 +91,7 @@ def main():
     parser.add_argument("--outputdir", "-o", type=str, help="directory to create the dump in")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
+    parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroIndex.dat+CroBank.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
     parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
@@ -109,6 +110,18 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cracked = strucrack(None, cargs)
+        if not cracked:
+            return
+        kod = crodump.koddecoder.new(cracked)
+    elif args.dbcrack:
+        class Cls: pass
+        cargs = Cls()
+        cargs.dbdir = args.dbdir
+        cargs.sys = False
+        cargs.silent = True
+        cracked = dbcrack(None, cargs)
+        if not cracked:
+            return
         kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()

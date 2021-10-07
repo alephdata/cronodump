@@ -4,7 +4,7 @@
 import os
 import os.path
 from .Database import Database
-from .crodump import strucrack
+from .crodump import strucrack, dbcrack
 from .hexdump import unhex
 
 
@@ -25,6 +25,7 @@ def main():
     parser = argparse.ArgumentParser(description="db field dumper")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
+    parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroIndex.dat+CroBank.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
     parser.add_argument("--maxrecs", "-m", type=int, default=100)
     parser.add_argument("--recurse", "-r", action="store_true")
@@ -48,6 +49,18 @@ def main():
                 cargs.sys = False
                 cargs.silent = True
                 cracked = strucrack(None, cargs)
+                if not cracked:
+                    return
+                kod = crodump.koddecoder.new(cracked)
+            elif args.dbcrack:
+                class Cls: pass
+                cargs = Cls()
+                cargs.dbdir = path
+                cargs.sys = False
+                cargs.silent = True
+                cracked = dbcrack(None, cargs)
+                if not cracked:
+                    return
                 kod = crodump.koddecoder.new(cracked)
             else:
                 kod = crodump.koddecoder.new()
