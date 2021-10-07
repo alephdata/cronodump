@@ -126,6 +126,7 @@ def strucrack(kod, args):
 
     xref = [ [0]*256 for _ in range(256) ]
     for i, data in enumerate(table.enumrecords()):
+        if not data: continue
         for ofs, byte in enumerate(data):
             xref[(ofs+i+1)%256][byte] += 1
 
@@ -156,6 +157,9 @@ def dbcrack(kod, args):
     xref = [ [0]*256 for _ in range(256) ]
 
     for dbfile in db.bank, db.index:
+        if not dbfile:
+            print("no data file found in %s" % args.dbdir)
+            return
         for i in range(1, min(10000, dbfile.nrofrecords())):
             rec = dbfile.readrec(i)
             if rec and len(rec)>11:
@@ -267,6 +271,8 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cracked = strucrack(None, cargs)
+        if not cracked:
+            return
         kod = crodump.koddecoder.new(cracked)
     elif args.dbcrack:
         class Cls: pass
@@ -275,6 +281,8 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cracked = dbcrack(None, cargs)
+        if not cracked:
+            return
         kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()

@@ -110,6 +110,8 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cracked = strucrack(None, cargs)
+        if not cracked:
+            return
         kod = crodump.koddecoder.new(cracked)
     elif args.dbcrack:
         class Cls: pass
@@ -118,6 +120,8 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cracked = dbcrack(None, cargs)
+        if not cracked:
+            return
         kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()
