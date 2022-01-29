@@ -186,6 +186,22 @@ class Field:
             # just convert this to string for presentation
             self.content = str(data)
 
+        elif self.typ == 4:
+            # typ 4 is DATE, formatted like: <year-1900:signedNumber><month:2digits><day:2digits>
+            try:
+                y, m, d = 1900+int(data[:-4]), int(data[-4:-2]), int(data[-2:])
+                self.content = "%04d-%02d-%02d" % (y, m, d)
+            except ValueError:
+                self.content = str(data)
+
+        elif self.typ == 5:
+            # typ 5 is TIME, formatted like: <hour:2digits><minute:2digits>
+            try:
+                h, m = int(data[-4:-2]), int(data[-2:])
+                self.content = "%02d:%02d" % (h, m)
+            except ValueError:
+                self.content = str(data)
+
         elif self.typ == 6:
             # decode internal file reference
             rd = ByteReader(data)
