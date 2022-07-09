@@ -50,7 +50,7 @@ def csv_output(kod, args):
         tablesafename = safepathname(table.tablename) + ".csv"
 
         with open(tablesafename, 'w', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile)
+            writer = csv.writer(csvfile, delimiter=args.delimiter)
             writer.writerow([field.name for field in table.fields])
 
             # Record should be iterable over its fields, so we could use writerows
@@ -87,7 +87,8 @@ def main():
     parser = argparse.ArgumentParser(description="CRONOS database converter")
     parser.add_argument("--template", "-t", type=str, default="html",
                         help="output template to use for conversion")
-    parser.add_argument("--csv", "-c", action='store_true', help='create output in .csv format')
+    parser.add_argument("--csv", "-c", action='store_true', help="create output in .csv format")
+    parser.add_argument("--delimiter", "-d", default=",", help="delimiter used in csv output")
     parser.add_argument("--outputdir", "-o", type=str, help="directory to create the dump in")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
