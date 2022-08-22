@@ -1,5 +1,6 @@
 from .kodump import kod_hexdump
-from .hexdump import unhex, tohex
+from .koddecoder import INITIAL_KOD
+from .hexdump import unhex, tohex, asambigoushex, asasc, as1251
 from .readers import ByteReader
 from .Database import Database
 from .Datamodel import TableDefinition
@@ -130,10 +131,72 @@ def strucrack(kod, args):
         for ofs, byte in enumerate(data):
             xref[(ofs+i+1)%256][byte] += 1
 
-    KOD = [0] * 256
+    KOD = [-1] * 256
     for i, xx in enumerate(xref):
         k, v = max(enumerate(xx), key=lambda kv: kv[1])
+
+#       Display the confidence, matches under 3 usually are unreliable
+#       print("%02x :: %02x :: %d" % (i, k, v))
         KOD[k] = i
+
+#       Test deducted KOD against the default one, for debugging purposes
+#        if KOD[k] != INITIAL_KOD[k]:
+#            print("# KOD[%02x] == %02x, should be %02x" % (i, KOD[i], INITIAL_KOD[i]))
+#            KOD[k] = -1
+
+    for fix in args.fix or []:
+        # read format cciioo for hex char, KOD index and step offset
+        if len(fix) == 6 and fix[1] != "=":
+            c, i, o = unhex(fix)
+
+        # read format ciioo for ascii
+        if len(fix) == 6 and fix[1] == "=":
+            c, = as1251(fix[0])
+            i, o = unhex(fix[2:])
+
+        if len(fix) == 5:
+            c, = as1251(fix[0])
+            i, o = unhex(fix[1:])
+
+        KOD[i] = (c + o) % 256
+        # print("%02x %02x %02x" % (c, i, o))
+
+    import crodump.koddecoder
+    kod = crodump.koddecoder.new(KOD)
+
+    # Dump partially decoded stru records for the user to try to spot patterns
+    for i, data in enumerate(table.enumrecords()):
+        if not data: continue
+        candidate = kod.try_decode(i + 1, data)
+        p_hex = asambigoushex(candidate)
+        p_able = asasc(candidate)
+        data_chunks = [data[j:j+24] for j in range(0, len(data), 24)]
+        text_chunks = [p_able[j:j+24] for j in range(0, len(p_able), 24)]
+        hex_chunks = [p_hex[j:j+48] for j in range(0, len(p_hex), 48)]
+        for ofs, chunk in enumerate(text_chunks):
+            kh = " ".join([ "%c=%02x%02x" % (chunk[o], b, (24 * ofs + i + 1 + o) % 256) for o, b in enumerate(data_chunks[ofs])])
+            print ("%05d %-24s : %-48s : %s" % (24 * ofs, chunk, hex_chunks[ofs], kh))
+        print()
+
+    # Show duplicates that may arise by the user forcing KOD entries from command line
+    duplicates = [(o, v) for o, v in enumerate(KOD) if KOD.count(v) > 1 and v >= 0]
+    if len(duplicates):
+        print("duplicates found: " + ", ".join(["[%02x=>%02x]" % (o, v) for o, v in duplicates]))
+
+    # If the KOD is not completely resolved, show the missing mappings
+    unset_count = KOD.count(-1)
+    if unset_count > 0:
+        if not args.silent:
+            unset_fields = ", ".join(["%02x" % o for o, v in enumerate(KOD) if v == -1])
+            unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0,256)).difference(set(KOD)))])
+            print("Missing mappings: [%s] => [%s]\n" % (unset_fields, unused_values ))
+            print("ambigous result when cracking. %d fields unsolved." % unset_count )
+            print("KOD estimate:")
+            print(asambigoushex(KOD))
+
+            print("\nIf you can provide clues for unresolved KOD entries by looking at the output, pass them via")
+            print("crodump strucrack -f B=f103 -f Ф2305 -f 011725")
+        return [0 if _ < 0 else _ for _ in KOD]
 
     if not args.silent:
         print(tohex(bytes(KOD)))
@@ -226,7 +289,7 @@ def main():
     p.add_argument("--find1d", action="store_true", help="Find records with 0x1d in it")
     p.add_argument("--stats", action="store_true", help="calc table stats from the first byte of each record",)
     p.add_argument("--index", action="store_true", help="dump CroIndex")
-    p.add_argument("--stru", action="store_true", help="dump CroIndex")
+    p.add_argument("--stru", action="store_true", help="dump CroStru")
     p.add_argument("--bank", action="store_true", help="dump CroBank")
     p.add_argument("--sys", action="store_true", help="dump CroSys")
     p.add_argument("dbdir", type=str)
@@ -247,6 +310,7 @@ def main():
     p = subparsers.add_parser("strucrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
     p.add_argument("--sys", action="store_true", help="Use CroSys for cracking")
     p.add_argument("--silent", action="store_true", help="no output")
+    p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
     p.add_argument("dbdir", type=str)
     p.set_defaults(handler=strucrack)
 

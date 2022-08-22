@@ -30,9 +30,10 @@ class KODcoding:
         self.kod = [_ for _ in initial]
 
         # calculate the inverse table.
-        self.inv = [0 for _ in initial]
+        self.inv = [-1 for _ in initial]
         for i, x in enumerate(self.kod):
-            self.inv[x] = i
+            if x >= 0:
+                self.inv[x] = i
 
     def decode(self, o, data):
         """
@@ -40,6 +41,13 @@ class KODcoding:
             b[i] = KOD[a[i]]- (i+shift)
         """
         return bytes((self.kod[b] - i - o) % 256 for i, b in enumerate(data))
+
+    def try_decode(self, o, data):
+        """
+        decode : shift, a[0]..a[n-1] -> b[0]..b[n-1]
+            b[i] = KOD[a[i]]- (i+shift)
+        """
+        return [(self.kod[b] - i - o) % 256 if self.kod[b] >= 0 else -1 for i, b in enumerate(data)]
 
     def encode(self, o, data):
         """

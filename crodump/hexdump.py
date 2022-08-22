@@ -22,6 +22,23 @@ def ashex(line):
     """
     return " ".join("%02x" % _ for _ in line)
 
+def asambigoushex(line):
+    """
+    convert an array to a list of 2-digit hex values with potentially unset values of -1
+    """
+    return "".join("%02x" % _ if _ >= 0 else "??" for _ in line)
+
+def as1251(b):
+    """
+    convert a unicode character to a CP-1251 byte
+    This will help parse cyrillic user entries from command line.
+    """
+    try:
+        c = str(b).encode("cp1251")
+        return bytes(c)
+    except:
+        pass
+    return bytes(".")
 
 def aschr(b):
     """
@@ -45,7 +62,7 @@ def asasc(line):
     """
     convert a CP-1251 encoded byte-array to a line of unicode characters.
     """
-    return "".join(aschr(_) for _ in line)
+    return "".join(aschr(_) if _ >= 0 else '?' for _ in line)
 
 
 def hexdump(ofs, data, args):
