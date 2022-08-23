@@ -145,18 +145,15 @@ def strucrack(kod, args):
 #            KOD[k] = -1
 
     for fix in args.fix or []:
-        # read format cciioo for hex char, KOD index and step offset
-        if len(fix) == 6 and fix[1] != "=":
-            c, i, o = unhex(fix)
+        if len(fix) != 6:
+            print("Invalid Fix format. Use xxyy=C or xxyycc")
+            continue
 
-        # read format ciioo for ascii
-        if len(fix) == 6 and fix[1] == "=":
-            c, = as1251(fix[0])
-            i, o = unhex(fix[2:])
-
-        if len(fix) == 5:
-            c, = as1251(fix[0])
-            i, o = unhex(fix[1:])
+        if (fix[4] != "="):
+            i, o, c = unhex(fix)
+        else:
+            i, o = unhex(fix[0:4])
+            c, = as1251(fix[5:])
 
         KOD[i] = (c + o) % 256
         # print("%02x %02x %02x" % (c, i, o))
@@ -165,17 +162,19 @@ def strucrack(kod, args):
     kod = crodump.koddecoder.new(KOD)
 
     # Dump partially decoded stru records for the user to try to spot patterns
+    w = args.width
+    display_string = "%%05d %%-%ds : %%-%ds : %%s" % (w, 2 * w)
     for i, data in enumerate(table.enumrecords()):
         if not data: continue
         candidate = kod.try_decode(i + 1, data)
         p_hex = asambigoushex(candidate)
         p_able = asasc(candidate)
-        data_chunks = [data[j:j+24] for j in range(0, len(data), 24)]
-        text_chunks = [p_able[j:j+24] for j in range(0, len(p_able), 24)]
-        hex_chunks = [p_hex[j:j+48] for j in range(0, len(p_hex), 48)]
+        data_chunks = [data[j:j+w] for j in range(0, len(data), w)]
+        text_chunks = [p_able[j:j+w] for j in range(0, len(p_able), w)]
+        hex_chunks = [p_hex[j:j+2*w] for j in range(0, len(p_hex), 2*w)]
         for ofs, chunk in enumerate(text_chunks):
-            kh = " ".join([ "%c=%02x%02x" % (chunk[o], b, (24 * ofs + i + 1 + o) % 256) for o, b in enumerate(data_chunks[ofs])])
-            print ("%05d %-24s : %-48s : %s" % (24 * ofs, chunk, hex_chunks[ofs], kh))
+            kh = " ".join([ "%02x%02x=%c" % (b, (w * ofs + i + 1 + o) % 256, chunk[o]) for o, b in enumerate(data_chunks[ofs])])
+            print (display_string % (w * ofs, chunk, hex_chunks[ofs], kh))
         print()
 
     # Show duplicates that may arise by the user forcing KOD entries from command line
@@ -195,7 +194,7 @@ def strucrack(kod, args):
             print(asambigoushex(KOD))
 
             print("\nIf you can provide clues for unresolved KOD entries by looking at the output, pass them via")
-            print("crodump strucrack -f B=f103 -f Ф2305 -f 011725")
+            print("crodump strucrack -f f103=B  -f f10325")
         return [0 if _ < 0 else _ for _ in KOD]
 
     if not args.silent:
@@ -311,6 +310,8 @@ def main():
     p.add_argument("--sys", action="store_true", help="Use CroSys for cracking")
     p.add_argument("--silent", action="store_true", help="no output")
     p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
+    p.add_argument("--width", "-w", type=int, help="max number of decoded characters on screen", default=24)
+
     p.add_argument("dbdir", type=str)
     p.set_defaults(handler=strucrack)
 
