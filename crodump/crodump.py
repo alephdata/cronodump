@@ -116,7 +116,7 @@ def color_code(c, confidence, force):
         return "\033[32m" + c + "\033[0m"
     if confidence > 3:
         return "\033[93m" + c + "\033[0m"
-    return "\033[35m" + c + "\033[0m"
+    return "\033[94m" + c + "\033[0m"
 
 def strucrack(kod, args):
     """
