@@ -22,11 +22,11 @@ def ashex(line):
     """
     return " ".join("%02x" % _ for _ in line)
 
-def asambigoushex(line):
+def asambigoushex(line, confidence):
     """
     convert an array to a list of 2-digit hex values with potentially unset values of -1
     """
-    return "".join("%02x" % _ if _ >= 0 else "??" for _ in line)
+    return "".join("%02x" % _ if confidence[o] > 0 else "??" for o, _ in enumerate(line))
 
 def as1251(b):
     """
@@ -58,12 +58,14 @@ def aschr(b):
     return "."
 
 
-def asasc(line):
+def asasc(line, confidence=None):
     """
     convert a CP-1251 encoded byte-array to a line of unicode characters.
     """
-    return "".join(aschr(_) if _ >= 0 else '?' for _ in line)
-
+    if confidence == None:
+        return "".join(aschr(_) for _ in line)
+    else:
+        return "".join(aschr(_) if confidence[o] > 0 else "?" for o, _ in enumerate(line))
 
 def hexdump(ofs, data, args):
     """

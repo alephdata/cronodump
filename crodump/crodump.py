@@ -1,6 +1,6 @@
 from .kodump import kod_hexdump
-from .koddecoder import INITIAL_KOD
-from .hexdump import unhex, tohex, asambigoushex, asasc, as1251
+from .koddecoder import INITIAL_KOD, match_with_mismatches
+from .hexdump import unhex, tohex, asambigoushex, asasc, aschr, as1251
 from .readers import ByteReader
 from .Database import Database
 from .Datamodel import TableDefinition
@@ -104,6 +104,19 @@ def destruct(kod, args):
     elif args.type == 3:
         destruct_sys_definition(args, data)
 
+def color_code(c, confidence, force):
+    from sys import stdout
+    is_a_tty = hasattr(stdout, 'isatty') and stdout.isatty()
+    if not force and not is_a_tty:
+        return c
+
+    if confidence == 0:
+        return "\033[31m" + c + "\033[0m"
+    if confidence == 255:
+        return "\033[32m" + c + "\033[0m"
+    if confidence > 3:
+        return "\033[93m" + c + "\033[0m"
+    return "\033[35m" + c + "\033[0m"
 
 def strucrack(kod, args):
     """
@@ -131,13 +144,15 @@ def strucrack(kod, args):
         for ofs, byte in enumerate(data):
             xref[(ofs+i+1)%256][byte] += 1
 
-    KOD = [-1] * 256
+    KOD = [0] * 256
+    KOD_CONFIDENCE = [0] * 256
     for i, xx in enumerate(xref):
         k, v = max(enumerate(xx), key=lambda kv: kv[1])
 
 #       Display the confidence, matches under 3 usually are unreliable
 #       print("%02x :: %02x :: %d" % (i, k, v))
         KOD[k] = i
+        KOD_CONFIDENCE[k] = v
 
 #       Test deducted KOD against the default one, for debugging purposes
 #        if KOD[k] != INITIAL_KOD[k]:
@@ -156,25 +171,50 @@ def strucrack(kod, args):
             c, = as1251(fix[5:])
 
         KOD[i] = (c + o) % 256
+        KOD_CONFIDENCE[i] = 255
         # print("%02x %02x %02x" % (c, i, o))
 
     import crodump.koddecoder
-    kod = crodump.koddecoder.new(KOD)
+    kod = crodump.koddecoder.new(KOD, KOD_CONFIDENCE)
+
+    known_strings = [
+        (b'\x08BankName', 5),
+        (b'\x0f' + as1251("Системный номер"), 6)
+    ]
+
+    force_color = args.color
 
     # Dump partially decoded stru records for the user to try to spot patterns
     w = args.width
     display_string = "%%05d %%-%ds : %%-%ds : %%s" % (w, 2 * w)
     for i, data in enumerate(table.enumrecords()):
         if not data: continue
-        candidate = kod.try_decode(i + 1, data)
-        p_hex = asambigoushex(candidate)
-        p_able = asasc(candidate)
-        data_chunks = [data[j:j+w] for j in range(0, len(data), w)]
-        text_chunks = [p_able[j:j+w] for j in range(0, len(p_able), w)]
-        hex_chunks = [p_hex[j:j+2*w] for j in range(0, len(p_hex), 2*w)]
-        for ofs, chunk in enumerate(text_chunks):
-            kh = " ".join([ "%02x%02x=%c" % (b, (w * ofs + i + 1 + o) % 256, chunk[o]) for o, b in enumerate(data_chunks[ofs])])
-            print (display_string % (w * ofs, chunk, hex_chunks[ofs], kh))
+        candidate, candidate_confidence = kod.try_decode(i + 1, data)
+
+        for s, maxsubs in known_strings:
+            incomplete_matches = match_with_mismatches(candidate, candidate_confidence, s, maxsubs)
+            # print(sisnm)
+            for ofix in incomplete_matches:
+                do = ofix[0]
+                print("Found %s which looks a lot like %s " % (asasc(candidate[do:do+len(s)]), asasc(s)) )
+                print("Add the following switches to your command line to fix the decoder box:\n    ", end='')
+                for o, c in enumerate(s):
+                    print("-f %02x%02x%02x " % (data[do + o], (do + i + 1 + o) % 256, c), end='')
+                print("\n")
+
+        candidate_chunks = [candidate[j:j+w] for j in range(0, len(candidate), w)]
+        for ofs, chunk in enumerate(candidate_chunks):
+            confidence = candidate_confidence[ofs * w:ofs * w + w]
+            text = asasc(chunk, confidence)
+            hexed = asambigoushex(chunk, confidence)
+
+            colored = "".join(color_code(c, confidence[o], force_color) for o, c in enumerate(text))
+            colored_hexed = "".join(color_code(c, confidence[o>>1], force_color) for o, c in enumerate(hexed))
+            fix_helper = " ".join("%02x%02x=%s" % (b, (w * ofs + i + 1 + o) % 256, color_code(text[o], confidence[o], force_color)) for o, b in enumerate(data[ofs * w:ofs * w + w]))
+
+            padding = " " * (w - len(chunk))
+
+            print (display_string % (w * ofs, colored + padding, colored_hexed + padding * 2, fix_helper))
         print()
 
     # Show duplicates that may arise by the user forcing KOD entries from command line
@@ -183,19 +223,19 @@ def strucrack(kod, args):
         print("duplicates found: " + ", ".join(["[%02x=>%02x]" % (o, v) for o, v in duplicates]))
 
     # If the KOD is not completely resolved, show the missing mappings
-    unset_count = KOD.count(-1)
+    unset_count = KOD_CONFIDENCE.count(0)
     if unset_count > 0:
         if not args.silent:
-            unset_fields = ", ".join(["%02x" % o for o, v in enumerate(KOD) if v == -1])
+            unset_fields = ", ".join(["%02x" % o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0])
             unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0,256)).difference(set(KOD)))])
             print("Missing mappings: [%s] => [%s]\n" % (unset_fields, unused_values ))
             print("ambigous result when cracking. %d fields unsolved." % unset_count )
             print("KOD estimate:")
-            print(asambigoushex(KOD))
+            print("".join(color_code("%02x" % c if KOD_CONFIDENCE[o] > 0 else "??", KOD_CONFIDENCE[o], force_color) for o, c in enumerate(KOD) ))
 
             print("\nIf you can provide clues for unresolved KOD entries by looking at the output, pass them via")
-            print("crodump strucrack -f f103=B  -f f10325")
-        return [0 if _ < 0 else _ for _ in KOD]
+            print("crodump strucrack -f f103=B  -f f10342")
+        return [0 if KOD_CONFIDENCE[o] == 0 else _ for o, _ in enumerate(KOD)]
 
     if not args.silent:
         print(tohex(bytes(KOD)))
@@ -309,6 +349,7 @@ def main():
     p = subparsers.add_parser("strucrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
     p.add_argument("--sys", action="store_true", help="Use CroSys for cracking")
     p.add_argument("--silent", action="store_true", help="no output")
+    p.add_argument("--color", action="store_true", help="force color output even on non-ttys")
     p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
     p.add_argument("--width", "-w", type=int, help="max number of decoded characters on screen", default=24)
 
