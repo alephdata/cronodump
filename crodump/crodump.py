@@ -186,9 +186,11 @@ def strucrack(kod, args):
 
     # Dump partially decoded stru records for the user to try to spot patterns
     w = args.width
-    display_string = "%%05d %%-%ds : %%-%ds : %%s" % (w, 2 * w)
     for i, data in enumerate(table.enumrecords()):
         if not data: continue
+
+        print("Processing record number %d" % i )
+
         candidate, candidate_confidence = kod.try_decode(i + 1, data)
 
         for s, maxsubs in known_strings:
@@ -212,24 +214,29 @@ def strucrack(kod, args):
             colored_hexed = "".join(color_code(c, confidence[o>>1], force_color) for o, c in enumerate(hexed))
             fix_helper = " ".join("%02x%02x=%s" % (b, (w * ofs + i + 1 + o) % 256, color_code(text[o], confidence[o], force_color)) for o, b in enumerate(data[ofs * w:ofs * w + w]))
 
+
+            # Can't use left padding in format string, because we have color escape codes,
+            # so do manual padding
             padding = " " * (w - len(chunk))
 
-            print (display_string % (w * ofs, colored + padding, colored_hexed + padding * 2, fix_helper))
+            print ("%05d %s : %s : %s" % (w * ofs, colored + padding, colored_hexed + padding * 2, fix_helper))
         print()
 
     # Show duplicates that may arise by the user forcing KOD entries from command line
-    duplicates = [(o, v) for o, v in enumerate(KOD) if KOD.count(v) > 1 and v >= 0]
+    kod_set = [v for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] > 0]
+    duplicates = [(o, v) for o, v in enumerate(KOD) if kod_set.count(v) > 1 and KOD_CONFIDENCE[o] > 0]
+    duplicates = sorted(duplicates, key=lambda x: x[1])
     if len(duplicates):
-        print("duplicates found: " + ", ".join(["[%02x=>%02x]" % (o, v) for o, v in duplicates]))
+        print("\nDuplicates found:\n" + ", ".join(color_code("[%02x=>%02x]" % (o, v), KOD_CONFIDENCE[o], force_color) for o, v in duplicates))
 
     # If the KOD is not completely resolved, show the missing mappings
     unset_count = KOD_CONFIDENCE.count(0)
     if unset_count > 0:
         if not args.silent:
             unset_fields = ", ".join(["%02x" % o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0])
-            unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0,256)).difference(set(KOD)))])
-            print("Missing mappings: [%s] => [%s]\n" % (unset_fields, unused_values ))
-            print("ambigous result when cracking. %d fields unsolved." % unset_count )
+            unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0,256)).difference(set(kod_set)))])
+            print("\nAmbigous result when cracking. %d fields unsolved. Missing mappings:" % unset_count )
+            print("[%s] => [%s]\n" % (unset_fields, unused_values ))
             print("KOD estimate:")
             print("".join(color_code("%02x" % c if KOD_CONFIDENCE[o] > 0 else "??", KOD_CONFIDENCE[o], force_color) for o, c in enumerate(KOD) ))
 
