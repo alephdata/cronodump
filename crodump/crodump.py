@@ -5,7 +5,6 @@ from .readers import ByteReader
 from .Database import Database
 from .Datamodel import TableDefinition
 
-
 def destruct_sys3_def(rd):
     # todo
     pass
@@ -174,6 +173,17 @@ def strucrack(kod, args):
         KOD_CONFIDENCE[i] = 255
         # print("%02x %02x %02x" % (c, i, o))
 
+    kod_set = set([v for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] > 0])
+    unset_entries = [o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0]
+    unused_values = [v for v in sorted(set(range(0,256)).difference(kod_set))]
+
+    # if there's only one mapping missing in KOD and only one value not used, we
+    # just assume those to belong together with a low confidence
+    if len(unset_entries) == 1 and len(unused_values) == 1:
+        entry = unset_entries[0]
+        KOD[entry] = unused_values[0]
+        KOD_CONFIDENCE[entry] = 1
+
     import crodump.koddecoder
     kod = crodump.koddecoder.new(KOD, KOD_CONFIDENCE)
 
@@ -233,10 +243,10 @@ def strucrack(kod, args):
     unset_count = KOD_CONFIDENCE.count(0)
     if unset_count > 0:
         if not args.silent:
-            unset_fields = ", ".join(["%02x" % o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0])
+            unset_entries = ", ".join(["%02x" % o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0])
             unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0,256)).difference(set(kod_set)))])
-            print("\nAmbigous result when cracking. %d fields unsolved. Missing mappings:" % unset_count )
-            print("[%s] => [%s]\n" % (unset_fields, unused_values ))
+            print("\nAmbigous result when cracking. %d entries unsolved. Missing mappings:" % unset_count )
+            print("[%s] => [%s]\n" % (unset_entries, unused_values ))
             print("KOD estimate:")
             print("".join(color_code("%02x" % c if KOD_CONFIDENCE[o] > 0 else "??", KOD_CONFIDENCE[o], force_color) for o, c in enumerate(KOD) ))
 
@@ -358,6 +368,7 @@ def main():
     p.add_argument("--silent", action="store_true", help="no output")
     p.add_argument("--color", action="store_true", help="force color output even on non-ttys")
     p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
+    p.add_argument("--text", "-t", action="append", dest="text", help="add fixed to decoder box by providing whole strings for a position in a record")
     p.add_argument("--width", "-w", type=int, help="max number of decoded characters on screen", default=24)
 
     p.add_argument("dbdir", type=str)
