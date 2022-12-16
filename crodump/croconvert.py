@@ -50,7 +50,7 @@ def csv_output(kod, args):
         tablesafename = safepathname(table.tablename) + ".csv"
 
         with open(tablesafename, 'w', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile, delimiter=args.delimiter)
+            writer = csv.writer(csvfile, delimiter=args.delimiter, escapechar='\\')
             writer.writerow([field.name for field in table.fields])
 
             # Record should be iterable over its fields, so we could use writerows
