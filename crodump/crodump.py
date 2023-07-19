@@ -242,6 +242,8 @@ def strucrack(kod, args):
     # If the KOD is not completely resolved, show the missing mappings
     unset_count = KOD_CONFIDENCE.count(0)
     if unset_count > 0:
+        if args.noninteractive:
+            return
         if not args.silent:
             unset_entries = ", ".join(["%02x" % o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0])
             unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0,256)).difference(set(kod_set)))])
@@ -368,7 +370,7 @@ def main():
     p.add_argument("--silent", action="store_true", help="no output")
     p.add_argument("--color", action="store_true", help="force color output even on non-ttys")
     p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
-    p.add_argument("--text", "-t", action="append", dest="text", help="add fixed to decoder box by providing whole strings for a position in a record")
+    p.add_argument("--text", "-t", action="append", dest="text", help="add fixed bytes to decoder box by providing whole strings for a position in a record")
     p.add_argument("--width", "-w", type=int, help="max number of decoded characters on screen", default=24)
 
     p.add_argument("dbdir", type=str)
