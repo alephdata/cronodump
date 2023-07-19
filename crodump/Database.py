@@ -172,7 +172,7 @@ class Database:
             dbdef = self.decode_db_definition(dbinfo[1:])
         except Exception as e:
             print("ERROR decoding db definition: %s" % e)
-            print("This could possibly mean that you need to try with the --strucrack option")
+            print("This could possibly mean that you need to try     crodump strucrack     to deduct the database key first")
             return
 
         for k, v in dbdef.items():
