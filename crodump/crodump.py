@@ -257,7 +257,7 @@ def strucrack(kod, args):
         return [0 if KOD_CONFIDENCE[o] == 0 else _ for o, _ in enumerate(KOD)]
 
     if not args.silent:
-        print("Use the following database key to decrypt the database with crodump or croconvert with the -f option:")
+        print("Use the following database key to decrypt the database with crodump or croconvert with the --kod option:")
         print(tohex(bytes(KOD)))
 
     return KOD

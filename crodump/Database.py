@@ -201,6 +201,7 @@ class Database:
                     print("Record %d too short: -- %s" % (i+1, ashex(data)), file=stderr)
                 except Exception as e:
                     print("Record %d broken: ERROR '%s' -- %s" % (i+1, e, ashex(data)), file=stderr)
+            del data
 
     def enumerate_files(self, table):
         """
