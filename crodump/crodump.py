@@ -188,7 +188,7 @@ def main():
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroBank.dat + CroIndex.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
-    parser.add_argument("--compact", action="store_true", help="save memory by not caching the index (increases convert time by ~15%)")
+    parser.add_argument("--compact", action="store_true", help="save memory by not caching the index, note: increases convert time by factor 1.15")
 
     p = subparsers.add_parser("kodump", help="KOD/hex dumper")
     p.add_argument("--offset", "-o", type=str, default="0")

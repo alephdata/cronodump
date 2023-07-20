@@ -91,7 +91,7 @@ def main():
     parser.add_argument("--delimiter", "-d", default=",", help="delimiter used in csv output")
     parser.add_argument("--outputdir", "-o", type=str, help="directory to create the dump in")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
-    parser.add_argument("--compact", action="store_true", help="save memory by not caching the index (increases convert time by ~15%)")
+    parser.add_argument("--compact", action="store_true", help="save memory by not caching the index, note: increases convert time by factor 1.15")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroIndex.dat+CroBank.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
