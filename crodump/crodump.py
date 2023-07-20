@@ -160,7 +160,7 @@ def dbcrack(kod, args):
         if not dbfile:
             print("no data file found in %s" % args.dbdir)
             return
-        for i in range(1, min(10000, dbfile.nrofrecords())):
+        for i in range(1, min(10000, dbfile.nrofrecords)):
             rec = dbfile.readrec(i)
             if rec and len(rec)>11:
                 xref[(i+3)%256][rec[3]] += 1
