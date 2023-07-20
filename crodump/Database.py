@@ -19,26 +19,28 @@ if sys.version_info[0] == 2:
 class Database:
     """represent the entire database, consisting of Stru, Index and Bank files"""
 
-    def __init__(self, dbdir, kod=crodump.koddecoder.new()):
+    def __init__(self, dbdir, compact, kod=crodump.koddecoder.new()):
         """
         `dbdir` is the directory containing the Cro*.dat and Cro*.tad files.
+        `compact` if set, the .tad file is not cached in memory, making dumps 15 % slower
         `kod` is optionally a KOD coder object.
               by default the v3 KOD coding will be used.
         """
         self.dbdir = dbdir
+        self.compact = compact
         self.kod = kod
 
         # Stru+Index+Bank for the components for most databases
+        self.bank = self.getfile("Bank")
         self.stru = self.getfile("Stru")
         self.index = self.getfile("Index")
-        self.bank = self.getfile("Bank")
 
         # the Sys file resides in the "Program Files\Cronos" directory, and
         # contains an index of all known databases.
         self.sys = self.getfile("Sys")
 
     def nrofrecords(self):
-        return len(self.bank.tadidx)
+        return self.bank.nrofrecords
 
     def getfile(self, name):
         """
@@ -52,7 +54,7 @@ class Database:
             datname = self.getname(name, "dat")
             tadname = self.getname(name, "tad")
             if datname and tadname:
-                return Datafile(name, open(datname, "rb"), open(tadname, "rb"), self.kod)
+                return Datafile(name, open(datname, "rb"), open(tadname, "rb"), self.kod, self.compact)
         except IOError:
             return
 
