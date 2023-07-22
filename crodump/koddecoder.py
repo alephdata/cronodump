@@ -49,7 +49,7 @@ class KODcoding:
             b[i] = KOD[a[i]]- (i+shift)
         """
         return (
-            [(self.kod[b] - i - o) % 256 if self.confidence[b] > 0 else 0 for i, b in enumerate(data)],
+            [(self.kod[b] - i - o) % 256 if self.confidence[b] != 0 else 0 for i, b in enumerate(data)],
             [self.confidence[b] for b in data]
         )
 

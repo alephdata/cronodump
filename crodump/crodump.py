@@ -109,6 +109,8 @@ def color_code(c, confidence, force):
     if not force and not is_a_tty:
         return c
 
+    if confidence < 0:
+        return "\033[96m" + c + "\033[0m"
     if confidence == 0:
         return "\033[31m" + c + "\033[0m"
     if confidence == 255:
@@ -184,6 +186,15 @@ def strucrack(kod, args):
         KOD[entry] = unused_values[0]
         KOD_CONFIDENCE[entry] = 1
 
+    # Show duplicates that may arise by the user forcing KOD entries from command line
+    kod_set = [v for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] > 0]
+    duplicates = [(o, v) for o, v in enumerate(KOD) if kod_set.count(v) > 1 and KOD_CONFIDENCE[o] > 0]
+    duplicates = sorted(duplicates, key=lambda x: x[1])
+
+    for o, v in duplicates:
+        if KOD_CONFIDENCE[o] < 255:
+            KOD_CONFIDENCE[o] = -1
+
     import crodump.koddecoder
     kod = crodump.koddecoder.new(KOD, KOD_CONFIDENCE)
 
@@ -232,12 +243,8 @@ def strucrack(kod, args):
             print ("%05d %s : %s : %s" % (w * ofs, colored + padding, colored_hexed + padding * 2, fix_helper))
         print()
 
-    # Show duplicates that may arise by the user forcing KOD entries from command line
-    kod_set = [v for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] > 0]
-    duplicates = [(o, v) for o, v in enumerate(KOD) if kod_set.count(v) > 1 and KOD_CONFIDENCE[o] > 0]
-    duplicates = sorted(duplicates, key=lambda x: x[1])
     if len(duplicates):
-        print("\nDuplicates found:\n" + ", ".join(color_code("[%02x=>%02x]" % (o, v), KOD_CONFIDENCE[o], force_color) for o, v in duplicates))
+        print("\nDuplicates found:\n" + ", ".join(color_code("[%02x=>%02x (%d)]" % (o, v, KOD_CONFIDENCE[o]), KOD_CONFIDENCE[o], force_color) for o, v in duplicates))
 
     # If the KOD is not completely resolved, show the missing mappings
     unset_count = KOD_CONFIDENCE.count(0)
@@ -369,6 +376,7 @@ def main():
     p = subparsers.add_parser("strucrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
     p.add_argument("--sys", action="store_true", help="Use CroSys for cracking")
     p.add_argument("--silent", action="store_true", help="no output")
+    p.add_argument("--noninteractive", action="store_true", help="Stop if automatic cracking fails")
     p.add_argument("--color", action="store_true", help="force color output even on non-ttys")
     p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
     p.add_argument("--text", "-t", action="append", dest="text", help="add fixed bytes to decoder box by providing whole strings for a position in a record")
@@ -397,6 +405,7 @@ def main():
         cargs.dbdir = args.dbdir
         cargs.sys = False
         cargs.silent = True
+        cargs.noninteractive = False
         cracked = strucrack(None, cargs)
         if not cracked:
             return
@@ -407,6 +416,7 @@ def main():
         cargs.dbdir = args.dbdir
         cargs.sys = False
         cargs.silent = True
+        cargs.noninteractive = False
         cracked = dbcrack(None, cargs)
         if not cracked:
             return
