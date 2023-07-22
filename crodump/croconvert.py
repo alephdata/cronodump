@@ -23,7 +23,7 @@ def template_convert(kod, args):
             "Fatal: Jinja templating engine not found. Install using pip install jinja2"
         )
 
-    db = Database(args.dbdir, kod)
+    db = Database(args.dbdir, args.compact, kod)
 
     template_dir = join(dirname(dirname(abspath(__file__))), "templates")
     j2_env = Environment(loader=FileSystemLoader(template_dir))
@@ -38,7 +38,7 @@ def safepathname(name):
 def csv_output(kod, args):
     """creates a directory with the current timestamp and in it a set of CSV or TSV
        files with all the tables found and an extra directory with all the files"""
-    db = Database(args.dbdir, kod)
+    db = Database(args.dbdir, args.compact, kod)
 
     mkdir(args.outputdir)
     chdir(args.outputdir)
@@ -91,6 +91,7 @@ def main():
     parser.add_argument("--delimiter", "-d", default=",", help="delimiter used in csv output")
     parser.add_argument("--outputdir", "-o", type=str, help="directory to create the dump in")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
+    parser.add_argument("--compact", action="store_true", help="save memory by not caching the index, note: increases convert time by factor 1.15")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroIndex.dat+CroBank.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
