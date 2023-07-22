@@ -1,6 +1,6 @@
 from .kodump import kod_hexdump
 from .koddecoder import INITIAL_KOD, match_with_mismatches
-from .hexdump import unhex, tohex, asambigoushex, asasc, aschr, as1251
+from .hexdump import unhex, tohex, asambigoushex, asasc, aschr, as1251, ashex
 from .readers import ByteReader
 from .Database import Database
 from .Datamodel import TableDefinition
@@ -175,6 +175,17 @@ def strucrack(kod, args):
         KOD_CONFIDENCE[i] = 255
         # print("%02x %02x %02x" % ((c + o) % 256, i, o))
 
+    # For chunks of text where record and offset is known, set the KOD
+    for fix in args.text:
+        record, line, offset, text = fix.split(':', 4)
+        data = table.readrec(int(record)+1)
+        dataoff = int(line) + int(offset)
+        o = int(record) + 1 + int(line) + int(offset)
+        for i, c in enumerate(text):
+            d = data[dataoff + i]
+            KOD[d] = (int.from_bytes(as1251(c), "little") + o + i) % 256
+            KOD_CONFIDENCE[d] = 255
+
     kod_set = set([v for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] > 0])
     unset_entries = [o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0]
     unused_values = [v for v in sorted(set(range(0,256)).difference(kod_set))]
@@ -199,8 +210,10 @@ def strucrack(kod, args):
     kod = crodump.koddecoder.new(KOD, KOD_CONFIDENCE)
 
     known_strings = [
-        (b'\x08BankName', 5),
-        (b'\x0f' + as1251("Системный номер"), 6)
+        (b'USERINFO', 4, b'\x08USERINFO', -1),
+        (b'Version', 4, b'\x07Version', -1),
+        (b'\x08BankName', 5, b'\x08BankName', 0),
+        (as1251("Системный номер"), 6, b'\x00\x00\x00\x00\x00\x00\x0f' + as1251("Системный номер") + b'\x01\x00\x00\x00\x00', -7)
     ]
 
     force_color = args.color
@@ -214,15 +227,15 @@ def strucrack(kod, args):
 
         candidate, candidate_confidence = kod.try_decode(i + 1, data)
 
-        for s, maxsubs in known_strings:
+        for s, maxsubs, deststring, destoffset in known_strings:
             incomplete_matches = match_with_mismatches(candidate, candidate_confidence, s, maxsubs)
             # print(sisnm)
             for ofix in incomplete_matches:
                 do = ofix[0]
                 print("Found %s which looks a lot like %s " % (asasc(candidate[do:do+len(s)]), asasc(s)) )
                 print("Add the following switches to your command line to fix the decoder box:\n    ", end='')
-                for o, c in enumerate(s):
-                    print("-f %02x%02x%02x " % (data[do + o], (do + i + 1 + o) % 256, c), end='')
+                for o, c in enumerate(deststring):
+                    print("-f %02x%02x%02x " % (data[do + o + destoffset], (do + i + 1 + o + destoffset) % 256, c), end='')
                 print("\n")
 
         candidate_chunks = [candidate[j:j+w] for j in range(0, len(candidate), w)]
