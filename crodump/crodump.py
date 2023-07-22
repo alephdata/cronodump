@@ -173,7 +173,7 @@ def strucrack(kod, args):
 
         KOD[i] = (c + o) % 256
         KOD_CONFIDENCE[i] = 255
-        # print("%02x %02x %02x" % (c, i, o))
+        # print("%02x %02x %02x" % ((c + o) % 256, i, o))
 
     kod_set = set([v for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] > 0])
     unset_entries = [o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0]
