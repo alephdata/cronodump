@@ -31,9 +31,9 @@ class Database:
         self.kod = kod
 
         # Stru+Index+Bank for the components for most databases
-        self.bank = self.getfile("Bank")
         self.stru = self.getfile("Stru")
         self.index = self.getfile("Index")
+        self.bank = self.getfile("Bank")
 
         # the Sys file resides in the "Program Files\Cronos" directory, and
         # contains an index of all known databases.
