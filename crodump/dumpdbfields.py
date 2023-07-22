@@ -68,7 +68,7 @@ def main():
             db = Database(path, kod)
             for tab in db.enumerate_tables():
                 tab.dump(args)
-                print("nr of records: %d" % db.nrofrecords())
+                print("nr of records: %d" % db.bank.nrofrecords)
                 i = 0
                 for rec in db.enumerate_records(tab):
                     for field, fielddef in zip(rec.fields, tab.fields):

@@ -19,13 +19,15 @@ if sys.version_info[0] == 2:
 class Database:
     """represent the entire database, consisting of Stru, Index and Bank files"""
 
-    def __init__(self, dbdir, kod=crodump.koddecoder.new()):
+    def __init__(self, dbdir, compact, kod=crodump.koddecoder.new()):
         """
         `dbdir` is the directory containing the Cro*.dat and Cro*.tad files.
+        `compact` if set, the .tad file is not cached in memory, making dumps 15 % slower
         `kod` is optionally a KOD coder object.
               by default the v3 KOD coding will be used.
         """
         self.dbdir = dbdir
+        self.compact = compact
         self.kod = kod
 
         # Stru+Index+Bank for the components for most databases
@@ -36,9 +38,6 @@ class Database:
         # the Sys file resides in the "Program Files\Cronos" directory, and
         # contains an index of all known databases.
         self.sys = self.getfile("Sys")
-
-    def nrofrecords(self):
-        return len(self.bank.tadidx)
 
     def getfile(self, name):
         """
@@ -52,7 +51,7 @@ class Database:
             datname = self.getname(name, "dat")
             tadname = self.getname(name, "tad")
             if datname and tadname:
-                return Datafile(name, open(datname, "rb"), open(tadname, "rb"), self.kod)
+                return Datafile(name, open(datname, "rb"), open(tadname, "rb"), self.compact, self.kod)
         except IOError:
             return
 
@@ -192,7 +191,7 @@ class Database:
             for rec in db.enumerate_records(tab):
                 print(sqlformatter(tab, rec))
         """
-        for i in range(self.nrofrecords()):
+        for i in range(self.bank.nrofrecords):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 try:
@@ -208,7 +207,7 @@ class Database:
         Yield all file contents found in CroBank for `table`.
         This is most likely the table with id 0.
         """
-        for i in range(self.nrofrecords()):
+        for i in range(self.bank.nrofrecords):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 yield i + 1, data[1:]

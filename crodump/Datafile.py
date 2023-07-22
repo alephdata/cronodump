@@ -4,14 +4,14 @@ import zlib
 from .hexdump import tohex, toout
 import crodump.koddecoder
 
-
 class Datafile:
     """Represent a single .dat with it's .tad index file"""
 
-    def __init__(self, name, dat, tad, kod):
+    def __init__(self, name, dat, tad, compact, kod):
         self.name = name
         self.dat = dat
         self.tad = tad
+        self.compact = compact
 
         self.readdathdr()
         self.readtad()
@@ -86,20 +86,45 @@ class Datafile:
         else:
             raise Exception("unsupported .tad version")
 
-        indexdata = self.tad.read()
+        self.tadhdrlen = self.tad.tell()
+        self.tadentrysize = 16 if self.use64bit else 12
+        if self.compact:
+            self.tad.seek(0, io.SEEK_END)
+        else:
+            self.idxdata = self.tad.read()
+        self.tadsize = self.tad.tell() - self.tadhdrlen
+        self.nrofrecords = self.tadsize // self.tadentrysize
+        if self.tadsize % self.tadentrysize:
+            print("WARN: leftover data in .tad")
+
+    def tadidx(self, idx):
+        """
+        If we're not supposed to be more compact but slower, lookup from a cached .tad
+        """
+        if self.compact:
+            return self.tadidx_seek(idx)
+
         if self.use64bit:
             # 01.03 and 01.11 have 64 bit file offsets
-            self.tadidx = [ struct.unpack_from("<QLL", indexdata, 16 * _) for _ in range(len(indexdata) // 16) ]
-            if len(indexdata) % 16:
-                print("WARN: leftover data in .tad")
+            return struct.unpack_from("<QLL", self.idxdata, idx * self.tadentrysize)
         else:
             # 01.02  and 01.04  have 32 bit offsets.
-            self.tadidx = [ struct.unpack_from("<LLL", indexdata, 12 * _) for _ in range(len(indexdata) // 12) ]
-            if len(indexdata) % 12:
-                print("WARN: leftover data in .tad")
+           return struct.unpack_from("<LLL", self.idxdata, idx * self.tadentrysize)
 
-    def nrofrecords(self):
-        return len(self.tadidx)
+
+    def tadidx_seek(self, idx):
+        """
+            Memory saving version without caching the .tad
+        """
+        self.tad.seek(self.tadhdrlen + idx * self.tadentrysize)
+        idxdata = self.tad.read(self.tadentrysize)
+
+        if self.use64bit:
+            # 01.03 and 01.11 have 64 bit file offsets
+            return struct.unpack("<QLL", idxdata)
+        else:
+            # 01.02  and 01.04  have 32 bit offsets.
+           return struct.unpack("<LLL", idxdata)
 
     def readdata(self, ofs, size):
         """
@@ -114,7 +139,7 @@ class Datafile:
         """
         if idx == 0:
             raise Exception("recnum must be a positive number")
-        ofs, ln, chk = self.tadidx[idx - 1]
+        ofs, ln, chk = self.tadidx(idx - 1)
         if ln == 0xFFFFFFFF:
             # deleted record
             return
@@ -164,7 +189,7 @@ class Datafile:
         return encdat
 
     def enumrecords(self):
-        for i in range(len(self.tadidx)):
+        for i in range(self.nrofrecords):
             yield self.readrec(i+1)
 
     def enumunreferenced(self, ranges, filesize):
@@ -195,7 +220,8 @@ class Datafile:
 
         ranges = []  # keep track of used bytes in the .dat file.
 
-        for i, (ofs, ln, chk) in enumerate(self.tadidx):
+        for i in range(self.nrofrecords):
+            (ofs, ln, chk) = self.tadidx(i)
             idx = i + 1
             if args.maxrecs and i==args.maxrecs:
                 break

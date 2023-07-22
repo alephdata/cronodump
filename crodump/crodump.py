@@ -51,13 +51,13 @@ def cro_dump(kod, args):
         # an arbitrarily large number.
         args.maxrecs = 0xFFFFFFFF
 
-    db = Database(args.dbdir, kod)
+    db = Database(args.dbdir, args.compact, kod)
     db.dump(args)
 
 
 def stru_dump(kod, args):
     """handle 'strudump' subcommand"""
-    db = Database(args.dbdir, kod)
+    db = Database(args.dbdir, args.compact, kod)
     db.strudump(args)
 
 
@@ -66,7 +66,7 @@ def sys_dump(kod, args):
     # an arbitrarily large number.
     args.maxrecs = 0xFFFFFFFF
 
-    db = Database(args.dbdir, kod)
+    db = Database(args.dbdir, args.compact, kod)
     if db.sys:
         db.sys.dump(args)
 
@@ -79,7 +79,7 @@ def rec_dump(kod, args):
         # an arbitrarily large number.
         args.maxrecs = 0xFFFFFFFF
 
-    db = Database(args.dbdir, kod)
+    db = Database(args.dbdir, args.compact, kod)
     db.recdump(args)
 
 
@@ -95,7 +95,7 @@ def destruct(kod, args):
 
     if args.type == 1:
         # create a dummy db object
-        db = Database(".")
+        db = Database(".", args.compact)
         db.dump_db_definition(args, data)
     elif args.type == 2:
         tbdef = TableDefinition(data)
@@ -127,7 +127,7 @@ def strucrack(kod, args):
     """
 
     # start without 'KOD' table, so we will get the encrypted records
-    db = Database(args.dbdir, None)
+    db = Database(args.dbdir, args.compact, None)
     if args.sys:
         table = db.sys
         if not db.sys:
@@ -282,14 +282,14 @@ def dbcrack(kod, args):
 
     """
     # start without 'KOD' table, so we will get the encrypted records
-    db = Database(args.dbdir, None)
+    db = Database(args.dbdir, args.compact, None)
     xref = [ [0]*256 for _ in range(256) ]
 
     for dbfile in db.bank, db.index:
         if not dbfile:
             print("no data file found in %s" % args.dbdir)
             return
-        for i in range(1, min(10000, dbfile.nrofrecords())):
+        for i in range(1, min(10000, dbfile.nrofrecords)):
             rec = dbfile.readrec(i)
             if rec and len(rec)>11:
                 xref[(i+3)%256][rec[3]] += 1
@@ -317,6 +317,7 @@ def main():
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroBank.dat + CroIndex.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
+    parser.add_argument("--compact", action="store_true", help="save memory by not caching the index, note: increases convert time by factor 1.15")
 
     p = subparsers.add_parser("kodump", help="KOD/hex dumper")
     p.add_argument("--offset", "-o", type=str, default="0")
