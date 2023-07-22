@@ -51,7 +51,7 @@ class Database:
             datname = self.getname(name, "dat")
             tadname = self.getname(name, "tad")
             if datname and tadname:
-                return Datafile(name, open(datname, "rb"), open(tadname, "rb"), self.kod, self.compact)
+                return Datafile(name, open(datname, "rb"), open(tadname, "rb"), self.compact, self.kod)
         except IOError:
             return
 

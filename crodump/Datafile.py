@@ -7,7 +7,7 @@ import crodump.koddecoder
 class Datafile:
     """Represent a single .dat with it's .tad index file"""
 
-    def __init__(self, name, dat, tad, kod, compact):
+    def __init__(self, name, dat, tad, compact, kod):
         self.name = name
         self.dat = dat
         self.tad = tad
