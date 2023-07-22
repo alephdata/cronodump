@@ -39,9 +39,6 @@ class Database:
         # contains an index of all known databases.
         self.sys = self.getfile("Sys")
 
-    def nrofrecords(self):
-        return self.bank.nrofrecords
-
     def getfile(self, name):
         """
         Returns a Datafile object for `name`.
@@ -194,7 +191,7 @@ class Database:
             for rec in db.enumerate_records(tab):
                 print(sqlformatter(tab, rec))
         """
-        for i in range(self.nrofrecords()):
+        for i in range(self.bank.nrofrecords):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 try:
@@ -209,7 +206,7 @@ class Database:
         Yield all file contents found in CroBank for `table`.
         This is most likely the table with id 0.
         """
-        for i in range(self.nrofrecords()):
+        for i in range(self.bank,nrofrecords):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 yield i + 1, data[1:]
