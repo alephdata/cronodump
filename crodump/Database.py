@@ -206,7 +206,7 @@ class Database:
         Yield all file contents found in CroBank for `table`.
         This is most likely the table with id 0.
         """
-        for i in range(self.bank,nrofrecords):
+        for i in range(self.bank.nrofrecords):
             data = self.bank.readrec(i + 1)
             if data and data[0] == table.tableid:
                 yield i + 1, data[1:]
