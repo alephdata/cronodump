@@ -176,7 +176,7 @@ def strucrack(kod, args):
         # print("%02x %02x %02x" % ((c + o) % 256, i, o))
 
     # For chunks of text where record and offset is known, set the KOD
-    for fix in args.text:
+    for fix in args.text or []:
         record, line, offset, text = fix.split(':', 4)
         data = table.readrec(int(record)+1)
         dataoff = int(line) + int(offset)
@@ -393,7 +393,7 @@ def main():
     p.add_argument("--noninteractive", action="store_true", help="Stop if automatic cracking fails")
     p.add_argument("--color", action="store_true", help="force color output even on non-ttys")
     p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
-    p.add_argument("--text", "-t", action="append", dest="text", help="add fixed bytes to decoder box by providing whole strings for a position in a record")
+    p.add_argument("--text", "-t", action="append", dest="text", help="add fixed bytes to decoder box by providing whole strings for a position in a record, format is record:line:offset:plaintext")
     p.add_argument("--width", "-w", type=int, help="max number of decoded characters on screen", default=24)
 
     p.add_argument("dbdir", type=str)
