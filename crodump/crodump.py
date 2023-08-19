@@ -271,6 +271,7 @@ def main():
         cargs.dbdir = args.dbdir
         cargs.sys = False
         cargs.silent = True
+        cargs.compact = args.compact
         cracked = strucrack(None, cargs)
         if not cracked:
             return
@@ -281,6 +282,7 @@ def main():
         cargs.dbdir = args.dbdir
         cargs.sys = False
         cargs.silent = True
+        cargs.compact = args.compact
         cracked = dbcrack(None, cargs)
         if not cracked:
             return
