@@ -420,6 +420,10 @@ def main():
         cargs.sys = False
         cargs.silent = True
         cargs.noninteractive = False
+        # add all keys we forgot to add
+        for k, v in args.__dict__.items():
+            if not cargs.__dict__.get(k):
+                cargs.__dict__.update({k: v})
         cracked = strucrack(None, cargs)
         if not cracked:
             return
