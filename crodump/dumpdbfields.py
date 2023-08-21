@@ -22,6 +22,9 @@ def processargs(args):
 def main():
     import argparse
 
+    class Cls:
+        pass
+
     parser = argparse.ArgumentParser(description="db field dumper")
     parser.add_argument("--kod", type=str, help="specify custom KOD table")
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
@@ -37,13 +40,12 @@ def main():
         try:
             import crodump.koddecoder
             if args.kod:
-                if len(args.kod)!=512:
+                if len(args.kod) != 512:
                     raise Exception("--kod should have a 512 hex digit argument")
                 kod = crodump.koddecoder.new(list(unhex(args.kod)))
             elif args.nokod:
                 kod = None
             elif args.strucrack:
-                class Cls: pass
                 cargs = Cls()
                 cargs.dbdir = path
                 cargs.sys = False
@@ -53,7 +55,6 @@ def main():
                     return
                 kod = crodump.koddecoder.new(cracked)
             elif args.dbcrack:
-                class Cls: pass
                 cargs = Cls()
                 cargs.dbdir = path
                 cargs.sys = False

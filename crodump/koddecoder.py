@@ -26,13 +26,15 @@ class KODcoding:
     class handing KOD encoding and decoding, optionally
     with a user specified KOD table.
     """
-    def __init__(self, initial=INITIAL_KOD):
+    def __init__(self, initial=INITIAL_KOD, confidence=[255] * 256):
         self.kod = [_ for _ in initial]
+        self.confidence = confidence
 
         # calculate the inverse table.
         self.inv = [0 for _ in initial]
         for i, x in enumerate(self.kod):
-            self.inv[x] = i
+            if confidence[i]:
+                self.inv[x] = i
 
     def decode(self, o, data):
         """
@@ -40,6 +42,16 @@ class KODcoding:
             b[i] = KOD[a[i]]- (i+shift)
         """
         return bytes((self.kod[b] - i - o) % 256 for i, b in enumerate(data))
+
+    def try_decode(self, o, data):
+        """
+        decode : shift, a[0]..a[n-1] -> b[0]..b[n-1]
+            b[i] = KOD[a[i]]- (i+shift)
+        """
+        return (
+            [(self.kod[b] - i - o) % 256 if self.confidence[b] != 0 else 0 for i, b in enumerate(data)],
+            [self.confidence[b] for b in data]
+        )
 
     def encode(self, o, data):
         """
@@ -56,4 +68,27 @@ def new(*args):
     return KODcoding(*args)
 
 
+def match_with_mismatches(data, confidence, string, maxsubs=None):
+    """
+    find all occurences of string in data with at least one and allowing a
+    maximum of maxsubs substitutions
+    """
 
+    # default for maximum of substitutions is to have at least two matching chars
+    maxsubs = maxsubs if maxsubs is not None else max(2, len(string) - 2)
+
+    # if string cant fit into data, return no matches
+    if len(string) > len(data):
+        return []
+
+    matches = []
+    for offs in range(0, len(data) - len(string)):
+        matching = 0
+        for o, c in enumerate(string):
+            if data[offs + o] == c and confidence[offs + o] > 0:
+                matching += 1
+
+        if matching != len(string) and matching >= maxsubs:
+            matches.append((offs, matching))
+
+    return sorted(matches, key=lambda x: x[1])
