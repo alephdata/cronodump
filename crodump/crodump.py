@@ -133,7 +133,6 @@ def strucrack(kod, args):
     the CroStru records will be zero, given a sufficient number of CroStru
     items, statistically the most common bytes will encode to '0x00'
     """
-
     # start without 'KOD' table, so we will get the encrypted records
     db = Database(args.dbdir, args.compact, None)
     if args.sys:
@@ -225,62 +224,63 @@ def strucrack(kod, args):
     force_color = args.color
 
     # Dump partially decoded stru records for the user to try to spot patterns
-    w = args.width
-    for i, data in enumerate(table.enumrecords()):
-        if not data:
-            continue
+    if not args.silent:
+        w = args.width
+        for i, data in enumerate(table.enumrecords()):
+            if not data:
+                continue
 
-        print("Processing record number %d" % i)
+            print("Processing record number %d" % i)
 
-        candidate, candidate_confidence = kod.try_decode(i + 1, data)
+            candidate, candidate_confidence = kod.try_decode(i + 1, data)
 
-        for s, maxsubs, deststring, destoffset in known_strings:
-            incomplete_matches = match_with_mismatches(candidate, candidate_confidence, s, maxsubs)
-            # print(sisnm)
-            for ofix in incomplete_matches:
-                do = ofix[0]
-                print("Found %s which looks a lot like %s " % (asasc(candidate[do:do + len(s)]), asasc(s)))
-                print("Add the following switches to your command line to fix the decoder box:\n    ", end='')
-                for o, c in enumerate(deststring):
-                    print("-f %02x%02x%02x " % (data[do + o + destoffset], (do + i + 1 + o + destoffset) % 256, c), end='')
-                print("\n")
+            for s, maxsubs, deststring, destoffset in known_strings:
+                incomplete_matches = match_with_mismatches(candidate, candidate_confidence, s, maxsubs)
+                # print(sisnm)
+                for ofix in incomplete_matches:
+                    do = ofix[0]
+                    print("Found %s which looks a lot like %s " % (asasc(candidate[do:do + len(s)]), asasc(s)))
+                    print("Add the following switches to your command line to fix the decoder box:\n    ", end='')
+                    for o, c in enumerate(deststring):
+                        print("-f %02x%02x%02x " % (data[do + o + destoffset], (do + i + 1 + o + destoffset) % 256, c), end='')
+                    print("\n")
 
-        candidate_chunks = [candidate[j:j + w] for j in range(0, len(candidate), w)]
-        for ofs, chunk in enumerate(candidate_chunks):
-            confidence = candidate_confidence[ofs * w:ofs * w + w]
-            text = asasc(chunk, confidence)
-            hexed = asambigoushex(chunk, confidence)
+            candidate_chunks = [candidate[j:j + w] for j in range(0, len(candidate), w)]
+            for ofs, chunk in enumerate(candidate_chunks):
+                confidence = candidate_confidence[ofs * w:ofs * w + w]
+                text = asasc(chunk, confidence)
+                hexed = asambigoushex(chunk, confidence)
 
-            colored = "".join(color_code(c, confidence[o], force_color) for o, c in enumerate(text))
-            colored_hexed = "".join(color_code(c, confidence[o >> 1], force_color) for o, c in enumerate(hexed))
-            fix_helper = " ".join("%02x%02x=%s" % (b, (w * ofs + i + 1 + o) % 256, color_code(text[o], confidence[o], force_color)) for o, b in enumerate(data[ofs * w:ofs * w + w]))
+                colored = "".join(color_code(c, confidence[o], force_color) for o, c in enumerate(text))
+                colored_hexed = "".join(color_code(c, confidence[o >> 1], force_color) for o, c in enumerate(hexed))
+                fix_helper = " ".join("%02x%02x=%s" % (b, (w * ofs + i + 1 + o) % 256, color_code(text[o], confidence[o], force_color)) for o, b in enumerate(data[ofs * w:ofs * w + w]))
 
-            # Can't use left padding in format string, because we have color escape codes,
-            # so do manual padding
-            padding = " " * (w - len(chunk))
+                # Can't use left padding in format string, because we have color escape codes,
+                # so do manual padding
+                padding = " " * (w - len(chunk))
 
-            print("%05d %s : %s : %s" % (w * ofs, colored + padding, colored_hexed + padding * 2, fix_helper))
-        print()
+                print("%05d %s : %s : %s" % (w * ofs, colored + padding, colored_hexed + padding * 2, fix_helper))
+            print()
 
-    if len(duplicates):
-        print("\nDuplicates found:\n" + ", ".join(color_code("[%02x=>%02x (%d)]" % (o, v, KOD_CONFIDENCE[o]), KOD_CONFIDENCE[o], force_color) for o, v in duplicates))
+        if len(duplicates):
+            print("\nDuplicates found:\n" + ", ".join(color_code("[%02x=>%02x (%d)]" % (o, v, KOD_CONFIDENCE[o]), KOD_CONFIDENCE[o], force_color) for o, v in duplicates))
 
-    # If the KOD is not completely resolved, show the missing mappings
-    unset_count = KOD_CONFIDENCE.count(0)
-    if unset_count > 0:
-        if args.noninteractive:
-            return
-        if not args.silent:
-            unset_entries = ", ".join(["%02x" % o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0])
-            unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0, 256)).difference(set(kod_set)))])
-            print("\nAmbigous result when cracking. %d entries unsolved. Missing mappings:" % unset_count)
-            print("[%s] => [%s]\n" % (unset_entries, unused_values))
-            print("KOD estimate:")
-            print("".join(color_code("%02x" % c if KOD_CONFIDENCE[o] > 0 else "??", KOD_CONFIDENCE[o], force_color) for o, c in enumerate(KOD)))
+        # If the KOD is not completely resolved, show the missing mappings
+        unset_count = KOD_CONFIDENCE.count(0)
+        if unset_count > 0:
+            if args.noninteractive:
+                return
+            if not args.silent:
+                unset_entries = ", ".join(["%02x" % o for o, v in enumerate(KOD) if KOD_CONFIDENCE[o] == 0])
+                unused_values = ", ".join(["%02x" % v for v in sorted(set(range(0, 256)).difference(set(kod_set)))])
+                print("\nAmbigous result when cracking. %d entries unsolved. Missing mappings:" % unset_count)
+                print("[%s] => [%s]\n" % (unset_entries, unused_values))
+                print("KOD estimate:")
+                print("".join(color_code("%02x" % c if KOD_CONFIDENCE[o] > 0 else "??", KOD_CONFIDENCE[o], force_color) for o, c in enumerate(KOD)))
 
-            print("\nIf you can provide clues for unresolved KOD entries by looking at the output, pass them via")
-            print("crodump strucrack -f f103=B  -f f10342")
-        return [0 if KOD_CONFIDENCE[o] == 0 else _ for o, _ in enumerate(KOD)]
+                print("\nIf you can provide clues for unresolved KOD entries by looking at the output, pass them via")
+                print("crodump strucrack -f f103=B  -f f10342")
+            return [0 if KOD_CONFIDENCE[o] == 0 else _ for o, _ in enumerate(KOD)]
 
     if not args.silent:
         print("Use the following database key to decrypt the database with crodump or croconvert with the --kod option:")
@@ -411,6 +411,10 @@ def main():
     p = subparsers.add_parser("dbcrack", help="Crack v4 KOD encrypion, bypassing the need for the database password.")
     p.add_argument("--silent", action="store_true", help="no output")
     p.add_argument("dbdir", type=str)
+    p.add_argument("--fix", "-f", action="append", dest="fix", help="force KOD entries after identification")
+    p.add_argument("--text", "-t", action="append", dest="text", help="add fixed bytes to decoder box by providing whole strings for a position in a record, format is record:line:offset:plaintext")
+    p.add_argument("--color", action="store_true", help="force color output even on non-ttys")
+    p.add_argument("--width", "-w", type=int, help="max number of decoded characters on screen", default=24)
     p.set_defaults(handler=dbcrack)
 
     args = parser.parse_args()
@@ -432,7 +436,7 @@ def main():
         for k, v in args.__dict__.items():
             if not cargs.__dict__.get(k):
                 cargs.__dict__.update({k: v})
-        cracked = strucrack(None, cargs)
+        cracked = strucrack(None, cargs, printout=True)
         if not cracked:
             return
         kod = crodump.koddecoder.new(cracked)
@@ -454,6 +458,7 @@ def main():
         kod = crodump.koddecoder.new()
 
     if args.handler:
+        # basically, struckrack() will be called twice
         args.handler(kod, args)
 
 
