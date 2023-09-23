@@ -50,7 +50,7 @@ def csv_output(kod, args):
         tablesafename = safepathname(table.tablename) + ".csv"
 
         with open(tablesafename, 'w', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile, delimiter=args.delimiter, escapechar='\\')
+            writer = csv.writer(csvfile, delimiter=args.delimiter)
             writer.writerow([field.name for field in table.fields])
 
             # Record should be iterable over its fields, so we could use writerows
@@ -58,6 +58,9 @@ def csv_output(kod, args):
                 writer.writerow([field.content for field in record.fields])
 
                 filereferences.extend([field for field in record.fields if field.typ == 6])
+
+    if args.nofiles:
+        return
 
     # Write all files from the file table. This is useful for unreferenced files
     for table in db.enumerate_tables(files=True):
@@ -84,6 +87,9 @@ def csv_output(kod, args):
 def main():
     import argparse
 
+    class Cls:
+        pass
+
     parser = argparse.ArgumentParser(description="CRONOS database converter")
     parser.add_argument("--template", "-t", type=str, default="html",
                         help="output template to use for conversion")
@@ -95,42 +101,36 @@ def main():
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroIndex.dat+CroBank.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
+    parser.add_argument("--nofiles", "-F", action="store_true", help="don't export files with .csv export")
     parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
 
     import crodump.koddecoder
     if args.kod:
-        if len(args.kod)!=512:
+        if len(args.kod) != 512:
             raise Exception("--kod should have a 512 hex digit argument")
         kod = crodump.koddecoder.new(list(unhex(args.kod)))
     elif args.nokod:
         kod = None
-    elif args.strucrack:
-        class Cls: pass
+    elif args.strucrack or args.dbcrack:
         cargs = Cls()
         cargs.dbdir = args.dbdir
         cargs.sys = False
         cargs.silent = True
-        cracked = strucrack(None, cargs)
+        cargs.fix = []
+        cargs.color = False
+        cargs.width = 24
+        cargs.noninteractive = True
+        cracked = strucrack(None, cargs) if args.strucrack else dbcrack(None, cargs)
         if not cracked:
-            return
-        kod = crodump.koddecoder.new(cracked)
-    elif args.dbcrack:
-        class Cls: pass
-        cargs = Cls()
-        cargs.dbdir = args.dbdir
-        cargs.sys = False
-        cargs.silent = True
-        cracked = dbcrack(None, cargs)
-        if not cracked:
-            return
+            exit("Can't automatically crack the database password. Try using   crodump strucrack   and pass the database key (KOD) using --kod")
         kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()
 
     if args.csv:
         if not args.outputdir:
-            args.outputdir = "cronodump"+datetime.now().strftime("-%Y-%m-%d-%H-%M-%S-%f")
+            args.outputdir = "cronodump" + datetime.now().strftime("-%Y-%m-%d-%H-%M-%S-%f")
         csv_output(kod, args)
     else:
         template_convert(kod, args)

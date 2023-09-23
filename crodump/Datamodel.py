@@ -30,23 +30,20 @@ class FieldDefinition:
 
     def __str__(self):
         if self.typ:
-            return "Type: %2d (%2d/%2d) %04x,(%d-%4d),%04x - %-40s -- %s" % (
-                    self.typ, self.idx1, self.idx2,
-                    self.flags, self.minval, self.maxval, self.unk4,
-                    "'%s'" % self.name, tohex(self.remaining))
+            return "Type: %2d (%2d/%2d) %04x,(%d-%4d),%04x - %-40s -- %s" % (self.typ, self.idx1, self.idx2,
+                                                                             self.flags, self.minval, self.maxval, self.unk4,
+                                                                             "'%s'" % self.name, tohex(self.remaining))
         else:
-            return "Type: %2d %2d    %d,%d       - '%s'" % (
-                    self.typ, self.idx1, self.flags, self.minval, self.name)
+            return "Type: %2d %2d    %d,%d       - '%s'" % (self.typ, self.idx1, self.flags, self.minval, self.name)
 
     def sqltype(self):
-        return { 0: "INTEGER PRIMARY KEY",
-                 1: "INTEGER",
-                 2: "VARCHAR(" + str(self.maxval) + ")",
-                 3: "TEXT",          # dictionaray
-                 4: "DATE",
-                 5: "TIMESTAMP",
-                 6: "TEXT",          # file reference
-        }.get(self.typ, "TEXT")
+        return {0: "INTEGER PRIMARY KEY",
+                1: "INTEGER",
+                2: "VARCHAR(" + str(self.maxval) + ")",
+                3: "TEXT",  # dictionaray
+                4: "DATE",
+                5: "TIMESTAMP",
+                6: "TEXT"}.get(self.typ, "TEXT")  # file reference
 
 
 class TableImage:
@@ -112,9 +109,9 @@ class TableDefinition:
         # given in first dword
         self.extraunkdatastrings = rd.readdword()
 
-        for _ in range(self.extraunkdatastrings):
-            datalen = rd.readword()
-            skip = rd.readbytes(datalen)
+#        for _ in range(self.extraunkdatastrings):
+#            datalen = rd.readword()
+#            skip = rd.readbytes(datalen)
 
         try:
             # Then there's another unknow dword and then (probably section indicator) 02 byte
@@ -147,10 +144,9 @@ class TableDefinition:
         self.tableimage = TableImage(image)
 
     def __str__(self):
-        return "%d,%d<%d,%d,%d>%d  %d,%d '%s'  '%s'  [TableImage(%d bytes): %s]" % (
-                self.unk1, self.version, self.unk2, self.unk3, self.unk4, self.tableid,
-                self.unk7, len(self.fields),
-                self.tablename, self.abbrev, len(self.tableimage.data), self.tableimage.filename)
+        return "%d,%d<%d,%d,%d>%d  %d,%d '%s'  '%s'  [TableImage(%d bytes): %s]" % (self.unk1, self.version, self.unk2, self.unk3, self.unk4, self.tableid,
+                                                                                    self.unk7, len(self.fields),
+                                                                                    self.tablename, self.abbrev, len(self.tableimage.data), self.tableimage.filename)
 
     def dump(self, args):
         if args.verbose:
@@ -190,7 +186,7 @@ class Field:
             # typ 4 is DATE, formatted like: <year-1900:signedNumber><month:2digits><day:2digits>
             try:
                 data = data.rstrip(b"\x00")
-                y, m, d = 1900+int(data[:-4]), int(data[-4:-2]), int(data[-2:])
+                y, m, d = 1900 + int(data[:-4]), int(data[-4:-2]), int(data[-2:])
                 self.content = "%04d-%02d-%02d" % (y, m, d)
             except ValueError:
                 self.content = str(data)
@@ -240,7 +236,7 @@ class Record:
 
         # start with the record number, or as Cronos calls this:
         # the system number, in russian: Системный номер.
-        self.fields = [ Field(tabledef[0], str(recno)) ]
+        self.fields = [Field(tabledef[0], str(recno))]
 
         rd = ByteReader(data)
         for fielddef in tabledef[1:]:

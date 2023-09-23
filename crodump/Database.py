@@ -142,7 +142,7 @@ class Database:
                 self.dump_ns1(v)
 
     def dump_ns1(self, data):
-        if len(data)<2:
+        if len(data) < 2:
             print("NS1 is unexpectedly short")
             return
         unk1, sh, = struct.unpack_from("<BB", data, 0)
@@ -156,7 +156,7 @@ class Database:
             print("NS1 is unexpectedly short")
             return
         serial, unk2, pwlen, = struct.unpack_from("<LLL", decoded_data, 0)
-        password = decoded_data[12:12+pwlen].decode('cp1251')
+        password = decoded_data[12:12 + pwlen].decode('cp1251')
 
         print("== NS1: (%02x,%02x) -> %6d, %d, %d:'%s'" % (unk1, sh, serial, unk2, pwlen, password))
 
@@ -171,7 +171,7 @@ class Database:
             dbdef = self.decode_db_definition(dbinfo[1:])
         except Exception as e:
             print("ERROR decoding db definition: %s" % e)
-            print("This could possibly mean that you need to try with the --strucrack option")
+            print("This could possibly mean that you need to try     crodump strucrack     to deduct the database key first")
             return
 
         for k, v in dbdef.items():
@@ -197,9 +197,10 @@ class Database:
                 try:
                     yield Record(i + 1, table.fields, data[1:])
                 except EOFError:
-                    print("Record %d too short: -- %s" % (i+1, ashex(data)), file=stderr)
+                    print("Record %d too short: -- %s" % (i + 1, ashex(data)), file=stderr)
                 except Exception as e:
-                    print("Record %d broken: ERROR '%s' -- %s" % (i+1, e, ashex(data)), file=stderr)
+                    print("Record %d broken: ERROR '%s' -- %s" % (i + 1, e, ashex(data)), file=stderr)
+            del data
 
     def enumerate_files(self, table):
         """

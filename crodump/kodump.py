@@ -77,5 +77,3 @@ def kod_hexdump(kod, args):
         if args.unhex:
             data = unhex(data)
         decode_kod(kod, args, data)
-
-

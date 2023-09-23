@@ -57,7 +57,7 @@ class ByteReader:
         if self.o + n > len(self.data):
             raise EOFError()
         self.o += n
-        return self.data[self.o-n:self.o]
+        return self.data[self.o - n:self.o]
 
     def readlongstring(self):
         """
