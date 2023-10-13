@@ -59,6 +59,9 @@ def csv_output(kod, args):
 
                 filereferences.extend([field for field in record.fields if field.typ == 6])
 
+    if args.nofiles:
+        return
+
     # Write all files from the file table. This is useful for unreferenced files
     for table in db.enumerate_tables(files=True):
         filedir = "Files-" + table.abbrev
@@ -95,6 +98,7 @@ def main():
     parser.add_argument("--strucrack", action="store_true", help="infer the KOD sbox from CroStru.dat")
     parser.add_argument("--dbcrack", action="store_true", help="infer the KOD sbox from CroIndex.dat+CroBank.dat")
     parser.add_argument("--nokod", "-n", action="store_true", help="don't KOD decode")
+    parser.add_argument("--nofiles", "-F", action="store_true", help="don't export files with .csv export")
     parser.add_argument("dbdir", type=str)
     args = parser.parse_args()
 
@@ -105,25 +109,21 @@ def main():
         kod = crodump.koddecoder.new(list(unhex(args.kod)))
     elif args.nokod:
         kod = None
-    elif args.strucrack:
+    elif args.strucrack or args.dbcrack:
         class Cls: pass
         cargs = Cls()
         cargs.dbdir = args.dbdir
         cargs.sys = False
         cargs.silent = True
-        cracked = strucrack(None, cargs)
+        cargs.fix = []
+        cargs.color = False
+        cargs.width = 24
+        cargs.noninteractive = True
+        cracked = strucrack(None, cargs) if args.strucrack else dbcrack(None, cargs)
         if not cracked:
-            return
-        kod = crodump.koddecoder.new(cracked)
-    elif args.dbcrack:
-        class Cls: pass
-        cargs = Cls()
-        cargs.dbdir = args.dbdir
-        cargs.sys = False
-        cargs.silent = True
-        cracked = dbcrack(None, cargs)
-        if not cracked:
-            return
+            exit(
+            "Can't automatically crack the database password. Try using   crodump strucrack   and pass the database key (KOD) using --kod"
+            )
         kod = crodump.koddecoder.new(cracked)
     else:
         kod = crodump.koddecoder.new()

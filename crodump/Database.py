@@ -171,7 +171,7 @@ class Database:
             dbdef = self.decode_db_definition(dbinfo[1:])
         except Exception as e:
             print("ERROR decoding db definition: %s" % e)
-            print("This could possibly mean that you need to try with the --strucrack option")
+            print("This could possibly mean that you need to try     crodump strucrack     to deduct the database key first")
             return
 
         for k, v in dbdef.items():
@@ -200,6 +200,7 @@ class Database:
                     print("Record %d too short: -- %s" % (i+1, ashex(data)), file=stderr)
                 except Exception as e:
                     print("Record %d broken: ERROR '%s' -- %s" % (i+1, e, ashex(data)), file=stderr)
+            del data
 
     def enumerate_files(self, table):
         """
